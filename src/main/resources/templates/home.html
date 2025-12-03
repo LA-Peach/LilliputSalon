@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lilliput Salon – Dashboard</title>
+<link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+
+<body class="page-gradient">
+
+<header>
+
+    <div sec:authorize="hasRole('CUSTOMER')"
+         th:replace="~{fragments/customer-nav :: customerNav}">
+    </div>
+
+    <div sec:authorize="hasRole('STYLIST')"
+         th:replace="~{fragments/stylist-nav :: stylistNav}">
+    </div>
+
+    <div sec:authorize="hasRole('OWNER')"
+         th:replace="~{fragments/owner-nav :: ownerNav}">
+    </div>
+
+</header>
+
+
+
+<!-- CUSTOMER DASHBOARD -->
+<main class="container" sec:authorize="hasRole('CUSTOMER')" style="margin-top:36px;">
+
+    <h2>Welcome Back!</h2>
+    <p style="color:var(--muted); margin-bottom:28px;">
+        Here’s everything you need today.
+    </p>
+
+
+</main>
+
+
+<!-- STYLIST DASHBOARD -->
+<main class="container" sec:authorize="hasRole('STYLIST')" style="margin-top:36px;">
+
+    <h2>Good Morning!</h2>
+    <p style="color:var(--muted); margin-bottom:28px;">
+        Here’s a quick view of your day.
+    </p>
+
+   
+
+</main>
+
+
+<!-- OWNER DASHBOARD -->
+<main class="container" sec:authorize="hasRole('OWNER')" style="margin-top:36px;">
+
+    <h2>Welcome, Owner</h2>
+    <p style="color:var(--muted); margin-bottom:28px;">
+        Management tools at your fingertips.
+    </p>
+
+   
+
+</main>
+
+
+</body>
+</html>

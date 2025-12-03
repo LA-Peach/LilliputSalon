@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Register – Lilliput Salon</title>
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+<body class="login-layout">
+
+<div class="container">
+
+    <div class="logo-badge">LS</div>
+
+    <div class="card">
+
+        <div class="brand">
+            <h1>Create Account</h1>
+            <p>Join us to get rewards!</p>
+        </div>
+
+        <form th:action="@{/register}" th:object="${form}" method="post">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}" />
+
+            <div class="field-group">
+                <label>Email</label>
+                <input th:field="*{email}" type="email" required />
+            </div>
+
+            <div class="field-group">
+                <label>Password</label>
+                <input th:field="*{password}" type="password" required />
+            </div>
+
+            <div class="field-group">
+                <label>Confirm Password</label>
+                <input th:field="*{confirmPassword}" type="password" required />
+            </div>
+
+            <div class="field-group">
+                <label>First Name</label>
+                <input th:field="*{firstName}" type="text" />
+            </div>
+
+            <div class="field-group">
+                <label>Last Name</label>
+                <input th:field="*{lastName}" type="text" />
+            </div>
+
+            <div class="field-group">
+                <label>Phone Number</label>
+                <input th:field="*{phone}" 
+                type="tel"
+			    pattern="^\d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$"
+			    title="Phone must be in 555-5555 or 555-555-5555 format" />
+            </div>
+
+            <button type="submit">Register</button>
+        </form>
+
+        <!-- Show any validation error -->
+        <div class="message error" th:if="${errorMessage}">
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <div class="register">
+            <a href="/login">Back to Login</a>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

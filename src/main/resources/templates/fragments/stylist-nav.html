@@ -1,0 +1,28 @@
+<nav class="ls-nav" th:fragment="stylistNav">
+
+    <div class="ls-nav-inner">
+
+        <div class="ls-nav-brand">
+            <div class="ls-nav-brand-badge">LS</div>
+            Lilliput Salon – Stylist
+        </div>
+
+        <ul class="ls-nav-links">
+            <li><a href="/stylist/calendar">Calendar</a></li>
+            <li><a href="/stylist/day">My Day</a></li>
+            <li><a href="/services">Services</a></li>
+            <li><a href="/stylist/rewards">Rewards</a></li>
+            <li><a href="/profile">My Profile</a></li>
+            <li class="logout-link">
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+				    <input type="hidden"
+				           th:name="${_csrf.parameterName}"
+				           th:value="${_csrf.token}" />
+				    <button type="submit" class="logout-btn">Log Out</button>
+				</form>
+            </li>
+        </ul>
+
+    </div>
+
+</nav>

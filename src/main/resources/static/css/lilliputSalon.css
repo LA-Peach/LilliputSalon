@@ -1,0 +1,502 @@
+/* ================================
+   LILLIPUT SALON – GLOBAL STYLES
+   ================================ */
+
+/* ---------- CSS Variables ---------- */
+:root {
+    --purple-1: #56315a;
+    --purple-2: #7a4b7c;
+    --purple-3: #9a67a1;
+
+    --rose: #c59aaa;
+    --dark: #3b233c;
+    --text: #2a1c29;
+    --muted: #7b6b7c;
+
+    --bg-1: #fff9ef;
+    --bg-2: #ead7df;
+    --offwhite: #fffdfa;
+}
+
+/* Global */
+body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background: linear-gradient(140deg, var(--bg-1), var(--bg-2));
+}
+
+/* Center wrapper */
+.container {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+}
+
+/* Metallic Badge */
+.logo-badge {
+    width: 94px;
+    height: 94px;
+    border-radius: 50%;
+    position: relative;
+    background: radial-gradient(
+        circle at 35% 30%,
+        #b68ebc 0%,
+        #8d5a95 28%,
+        #6e3f74 50%,
+        #4b2c50 75%,
+        #2e1a33 100%
+    );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: white;
+    text-shadow:
+        0 1px 2px rgba(255,255,255,0.6),
+        0 -1px 2px rgba(0,0,0,0.5);
+    box-shadow:
+        inset 0 -16px 26px rgba(0,0,0,0.45),
+        inset 0 4px 12px rgba(255,255,255,0.28),
+        inset 0 0 22px rgba(0,0,0,0.5),
+        0 12px 28px rgba(60, 30, 70, 0.5);
+    border: 2px solid rgba(255,255,255,0.65);
+    animation: floatIn 0.6s ease;
+}
+
+.logo-badge::before,
+.logo-badge::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+}
+
+.logo-badge::before {
+    top: 10%;
+    left: 18%;
+    width: 64%;
+    height: 38%;
+    background: radial-gradient(
+        circle at 55% 15%,
+        rgba(255,255,255,0.58) 0%,
+        rgba(255,255,255,0.22) 35%,
+        rgba(255,255,255,0.05) 75%,
+        transparent 100%
+    );
+    opacity: 0.75;
+    filter: blur(1px);
+}
+
+.logo-badge::after {
+    bottom: 14%;
+    right: 14%;
+    width: 50%;
+    height: 24%;
+    background: radial-gradient(
+        circle at 60% 80%,
+        rgba(255,255,255,0.25) 0%,
+        rgba(255,255,255,0.05) 55%,
+        transparent 100%
+    );
+    opacity: 0.55;
+    filter: blur(1.2px);
+}
+
+@keyframes floatIn {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+
+/* Login Card */
+.login-layout {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* move away from top edge a bit */
+    padding-top: 56px; /* pushes layout visually into central space */
+    padding-bottom: 56px;
+}
+
+@media (max-height: 900px) {
+    .login-layout {
+        align-items: flex-start;
+        padding-top: 32px;
+    }
+}
+
+.card {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 46px 32px 34px;
+    border-radius: 18px;
+    border: 2px solid rgba(122, 75, 124, 0.16);
+    backdrop-filter: blur(8px);
+    box-shadow:
+        inset 0 0 12px rgba(255,255,255,0.4),
+        0 8px 32px rgba(60, 40, 60, 0.15),
+        0 2px 8px rgba(60, 40, 60, 0.08);
+    animation: cardFade .55s ease;
+}
+
+@keyframes cardFade {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Branding Inside Card */
+.brand {
+    text-align: center;
+    margin-bottom: 28px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    color: var(--dark);
+    margin: 0 0 6px;
+}
+
+.brand p {
+    font-size: 15px;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+    margin: 0;
+}
+
+/* Form */
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+/* Elegant labels */
+label {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--dark);
+    letter-spacing: 0.35px;
+    margin-left: 2px;
+    margin-bottom: 6px;
+}
+
+/* Inputs */
+input {
+    padding: 15px 14px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(121, 85, 122, 0.35);
+    border-radius: 9px;
+    font-size: 15px;
+    color: var(--text);
+    transition: border .22s, box-shadow .22s, background .22s;
+}
+
+input:hover {
+    background: rgba(255,255,255,0.95);
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--rose);
+    background: rgba(255,255,255,1);
+    box-shadow: 0 0 0 4px rgba(197, 154, 170, 0.35);
+}
+
+/* Login Button */
+button {
+    margin-top: 6px;
+    padding: 15px;
+    font-size: 17px;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    background: var(--purple-2);
+    color: white;
+    letter-spacing: .5px;
+    transition: opacity .22s, transform .12s;
+}
+
+button:hover { opacity: .92; }
+button:active { transform: scale(.97); }
+
+/* Alerts */
+.message {
+    margin-top: 16px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.error { background: #ffe7eb; color: #8e0a20; }
+.logout { background: #e5f5e7; color: #1e582c; }
+
+/* Register Link */
+.register {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.register a {
+    text-decoration: none;
+    display: inline-block;
+    padding: 12px 22px;
+    background: var(--dark);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 8px;
+    letter-spacing: .4px;
+    transition: opacity .22s, transform .12s;
+}
+
+.register a:hover { opacity: .88; }
+.register a:active { transform: scale(.97) }
+
+/* =========================
+   NAVIGATION BAR – SHARED
+   ========================= */
+
+.ls-nav {
+    width: 100%;
+    padding: 12px 0px;
+
+    /* Extremely high contrast vs page background */
+    background: linear-gradient(
+        135deg,
+        #2a152f 0%,
+        #3d1e45 45%,
+        #482055 85%
+    );
+
+    backdrop-filter: blur(8px);
+
+    border-bottom: 1px solid rgba(255,255,255,0.45);
+
+    position: sticky;
+    top: 0;
+    z-index: 12;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    box-shadow:
+        inset 0 1px 3px rgba(255,255,255,0.38),
+        inset 0 -2px 6px rgba(0,0,0,0.28),
+        0 6px 18px rgba(30, 10, 40, 0.55);
+
+    animation: navFade 0.6s ease;
+}
+.ls-nav-inner {
+    width: 100%;
+    padding: 0 30px; /* same spacing both sides */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+@keyframes navFade {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Brand / logo area */
+.ls-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.96);
+    letter-spacing: 0.6px;
+    font-size: 1.02rem;
+}
+
+.ls-nav-brand-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 35% 30%,
+        #b68ebc 0%,
+        #8d5a95 28%,
+        #6e3f74 50%,
+        #4b2c50 75%,
+        #2e1a33 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* Link list */
+.ls-nav-links {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+}
+
+.ls-nav-links li a {
+    font-size: 0.97rem;
+    font-weight: 600;
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.25px;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.25s ease;
+}
+
+.ls-nav-links li a:hover {
+    background: rgba(255,255,255,0.26);
+    color: #fff;
+    box-shadow:
+        inset 0 2px 6px rgba(255,255,255,0.55),
+        inset 0 -1px 3px rgba(0,0,0,0.15);
+}
+
+.ls-nav-links li a.is-active {
+    background: rgba(255,255,255,0.34);
+    color: #fff;
+    box-shadow:
+        inset 0 2px 6px rgba(255,255,255,0.65),
+        inset 0 -2px 6px rgba(0,0,0,0.28);
+}
+
+.ls-nav-links li.logout-link a {
+    font-weight: 700;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.92);
+    font-size: 0.97rem;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 999px;
+}
+.logout-btn:hover {
+    background: rgba(255,255,255,0.26);
+    color: #fff;
+}
+
+
+/* Responsive */
+@media (max-width: 720px) {
+    .ls-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 18px;
+    }
+
+    .ls-nav-links {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+}
+
+/* ================================
+      DASHBOARD PAGE STYLES
+   ================================ */
+
+.page-gradient {
+    background: linear-gradient(140deg, var(--bg-1), var(--bg-2));
+    min-height: 100vh;
+    padding: 32px 16px;
+}
+
+/* Card styling reused on dashboards */
+.card {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 26px 22px;
+    border-radius: 14px;
+    border: 1px solid rgba(122, 75, 124, 0.13);
+    backdrop-filter: blur(8px);
+    box-shadow:
+        inset 0 0 8px rgba(255,255,255,0.3),
+        0 4px 22px rgba(60, 40, 60, 0.15),
+        0 1px 6px rgba(60, 40, 60, 0.08);
+}
+
+.card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    color: var(--dark);
+}
+
+.card p {
+    margin: 0;
+    color: var(--muted);
+}
+
+/* Grid layout */
+.grid {
+    width: 100%;
+    display: grid;
+    gap: 22px;
+}
+
+.grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+
+@media(max-width: 580px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 11px 18px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: opacity 0.22s, transform 0.12s;
+}
+
+.btn-primary {
+    background: var(--purple-2);
+    color: #fff;
+}
+
+.btn-primary:hover { opacity: .92; }
+
+.btn-secondary {
+    background: var(--dark);
+    color: #fff;
+}
+
+.btn-secondary:hover { opacity: .92; }
+
+body.page-gradient { display: block; }

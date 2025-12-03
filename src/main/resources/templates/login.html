@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lilliput Salon – Login</title>
+
+<link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+
+<body class="login-layout">
+
+<div class="container">
+
+    <!-- Metallic Logo -->
+    <div class="logo-badge">LS</div>
+
+    <!-- Login Card -->
+    <div class="card">
+
+        <!-- Contained Branding -->
+        <div class="brand">
+            <h1>Lilliput Salon</h1>
+            <p>A Little Bit of Elegance</p>
+        </div>
+
+        <form action="/login" method="post">
+            <input type="hidden"
+                th:name="${_csrf.parameterName}"
+                th:value="${_csrf.token}" />
+
+            <div class="field-group">
+                <label>Email</label>
+                <input type="text" name="username" placeholder="Enter your email" required />
+            </div>
+
+            <div class="field-group">
+                <label>Password</label>
+                <input type="password" name="password" placeholder="Enter your password" required />
+            </div>
+
+            <button type="submit">Login</button>
+        </form>
+
+        <div class="message error" th:if="${param.error}">
+            Invalid username or password.
+        </div>
+
+        <div class="message logout" style="display:none;">
+            You have been logged out.
+        </div>
+
+        <div class="register">
+            <a href="/register">Create an Account</a>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
