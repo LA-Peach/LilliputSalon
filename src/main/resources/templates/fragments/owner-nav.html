@@ -17,7 +17,8 @@
             <li><a href="/services">Services</a></li>
             <li><a href="/owner/rewards">Rewards</a></li>
             <li><a href="/owner/staffing">Staffing</a></li>
-            <li><a href="/profile">My Profile</a></li>
+            <li><a th:href="@{/profile}">My Profile</a></li>
+
             <li class="logout-link">                
             	<form th:action="@{/logout}" method="post" style="display:inline;">
 				    <input type="hidden"

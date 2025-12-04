@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile – Lilliput Salon</title>
+
+    <link rel="stylesheet" href="/css/lilliputSalon.css">
+</head>
+
+<body class="page-gradient">
+
+<header>
+    <div sec:authorize="hasRole('CUSTOMER')" th:replace="~{fragments/customer-nav :: customerNav}"></div>
+    <div sec:authorize="hasRole('STYLIST')" th:replace="~{fragments/stylist-nav :: stylistNav}"></div>
+    <div sec:authorize="hasRole('OWNER')" th:replace="~{fragments/owner-nav :: ownerNav}"></div>
+</header>
+
+<main class="profile-layout" style="margin-top: 42px;">
+
+    <div class="card" style="max-width: 720px; width: 100%; padding: 36px 28px;">
+        
+        <!-- Title -->
+        <h2 style="margin-top: 0; text-align:center; margin-bottom:24px; font-size: 1.4rem; font-weight: 800; color: var(--dark); letter-spacing: .4px;">
+            My Profile
+        </h2>
+
+        <!-- Success -->
+        <div th:if="${param.success}"
+             class="message logout"
+             style="margin-bottom: 24px; text-align:center;">
+            Profile updated successfully!
+        </div>
+
+        <form th:action="@{/profile/save}"
+              th:object="${profile}"
+              method="post">
+
+            <input type="hidden" th:field="*{id}">
+            <input type="hidden" th:field="*{user}">
+            <input type="hidden" th:field="*{userType}">
+
+            <div class="grid grid-2">
+
+			    <div class="field-group">
+			        <label>Email</label>
+			        <div class="info-display" th:text="*{user.email}"></div>
+			    </div>
+			
+			    <div class="field-group">
+			        <label>Role</label>
+			        <div class="info-display" th:text="*{userType.typeName}"></div>
+			    </div>
+			
+			</div>
+
+
+            <hr style="margin: 28px 0; border: none; border-top: 1px solid rgba(0,0,0,.12);">
+
+            <!-- Editable fields -->
+            <div class="grid grid-2">
+
+                <div class="field-group">
+                    <label>First Name</label>
+                    <input th:field="*{firstName}" placeholder="First Name">
+                </div>
+
+                <div class="field-group">
+                    <label>Last Name</label>
+                    <input th:field="*{lastName}" placeholder="Last Name">
+                </div>
+
+            </div>
+
+            <div class="field-group">
+                <label>Phone</label>
+                <input th:field="*{phone}" placeholder="Phone" />
+            </div>
+
+            <div class="grid grid-2">
+
+                <div class="field-group">
+				    <label>Hair Type</label>
+				    <select th:field="*{hairType}">
+					    <option value="">Select hair type...</option>
+					    <option value="Straight">Straight</option>
+					    <option value="Wavy">Wavy</option>
+					    <option value="Curly">Curly</option>
+					    <option value="Coily">Coily</option>
+					</select>
+				</div>
+				
+				<div class="field-group">
+				    <label>Hair Length</label>
+					<select th:field="*{hairLength}">
+					    <option value="">Select hair length...</option>
+					    <option value="Short">Short</option>
+					    <option value="Medium">Medium</option>
+					    <option value="Long">Long</option>
+					</select>
+				</div>
+        </div>
+
+            <div class="field-group">
+                <label>Preferences</label>
+                <textarea th:field="*{preferences}" rows="3" placeholder="Products, notes, style history..."></textarea>
+            </div>
+
+            <button class="btn-primary" type="submit" style="width: 100%; margin-top: 26px;">
+                Save Changes
+            </button>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+</html>

@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 
 public class CustomUserDetails implements UserDetails {
@@ -30,16 +31,17 @@ public class CustomUserDetails implements UserDetails {
         }
 
         String rawRole = user.getProfile().getUserType().getTypeName();
-        System.out.println("User TypeName from DB: " + rawRole);
 
         String role = rawRole.toUpperCase();
         String finalRole = role.startsWith("ROLE_") ? role : "ROLE_" + role;
 
-        System.out.println("Final assigned authority: " + finalRole);
+
         return Set.of(new SimpleGrantedAuthority(finalRole));
     }
 
-
+    public User getUser() {
+        return user;
+    }
 
     @Override
     public String getPassword() {

@@ -500,3 +500,54 @@ button:active { transform: scale(.97); }
 .btn-secondary:hover { opacity: .92; }
 
 body.page-gradient { display: block; }
+
+/* ================================
+      PROFILE PAGE STYLES
+   ================================ */
+.profile-layout {
+    min-height: calc(100vh - 72px); /* subtract navbar height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 32px 16px; /* protects content on short screens */
+}
+
+@media (max-height: 740px) {
+    .profile-layout {
+        align-items: flex-start; /* prevent cramped look on small heights */
+        padding-top: 42px;
+    }
+}
+
+.info-display {
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.72);
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    color: var(--dark);
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 0.3px;
+}
+
+select {
+    padding: 15px 14px;
+    background: rgba(255,255,255,0.85);
+    border: 1px solid rgba(121, 85, 122, 0.35);
+    border-radius: 9px;
+    font-size: 15px;
+    color: var(--text);
+    transition: border .22s, box-shadow .22s, background .22s;
+}
+
+select:hover {
+    background: rgba(255,255,255,0.95);
+}
+
+select:focus {
+    outline: none;
+    border-color: var(--rose);
+    background: rgba(255,255,255,1);
+    box-shadow: 0 0 0 4px rgba(197, 154, 170, 0.35);
+}
+

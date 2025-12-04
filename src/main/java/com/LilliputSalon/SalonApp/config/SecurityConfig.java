@@ -53,7 +53,6 @@ public class SecurityConfig {
     ) throws Exception {
 
         http
-            .authenticationManager(authenticationManager)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/register" ,"/css/**").permitAll()
                 
