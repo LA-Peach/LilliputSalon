@@ -1,5 +1,17 @@
 package com.LilliputSalon.SalonApp.web;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.domain.UserType;
@@ -9,16 +21,6 @@ import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
 import com.LilliputSalon.SalonApp.security.CustomUserDetails;
 
 import jakarta.validation.Valid;
-
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/profile")
@@ -70,7 +72,7 @@ public class ProfileController {
         model.addAttribute("profile", profile);
         return "profile";
     }
-    
+
     @GetMapping
     public String myProfile(@AuthenticationPrincipal CustomUserDetails currentUser) {
         Long userId = currentUser.getUser().getId();

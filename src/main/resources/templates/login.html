@@ -16,9 +16,9 @@
     <div class="logo-badge">LS</div>
 
     <!-- Login Card -->
-    <div class="card">
+    <div class="glass-card auth-card">
 
-        <!-- Contained Branding -->
+        <!-- Branding -->
         <div class="brand">
             <h1>Lilliput Salon</h1>
             <p>A Little Bit of Elegance</p>
@@ -31,27 +31,42 @@
 
             <div class="field-group">
                 <label>Email</label>
-                <input type="text" name="username" placeholder="Enter your email" required />
+                <input 
+                    type="text"
+                    name="username"
+                    placeholder="Enter your email"
+                    required />
             </div>
 
             <div class="field-group">
                 <label>Password</label>
-                <input type="password" name="password" placeholder="Enter your password" required />
+                <input 
+                    type="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required />
             </div>
 
-            <button type="submit">Login</button>
+            <button type="submit" class="btn-primary">
+                Login
+            </button>
         </form>
 
+        <!-- Error Message -->
         <div class="message error" th:if="${param.error}">
             Invalid username or password.
         </div>
 
-        <div class="message logout" style="display:none;">
+        <!-- Logout Message -->
+        <div class="message logout" th:if="${param.logout}">
             You have been logged out.
         </div>
 
+        <!-- Registration Link -->
         <div class="register">
-            <a href="/register">Create an Account</a>
+            <a href="/register" class="btn-secondary">
+                Create an Account
+            </a>
         </div>
 
     </div>

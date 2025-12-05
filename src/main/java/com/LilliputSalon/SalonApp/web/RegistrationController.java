@@ -2,7 +2,9 @@ package com.LilliputSalon.SalonApp.web;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import com.LilliputSalon.SalonApp.security.RegistrationRequest;
 import com.LilliputSalon.SalonApp.service.RegistrationService;

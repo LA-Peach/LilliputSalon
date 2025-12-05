@@ -9,10 +9,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.domain.UserType;
-import com.LilliputSalon.SalonApp.security.RegistrationRequest;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
+import com.LilliputSalon.SalonApp.security.RegistrationRequest;
 
 @Service
 public class RegistrationService {

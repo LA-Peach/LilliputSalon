@@ -1,24 +1,40 @@
-/* ================================
-   LILLIPUT SALON – GLOBAL STYLES
-   ================================ */
+/* =====================================
+     LILLIPUT SALON — GLOBAL STYLE SHEET
+   ===================================== */
 
-/* ---------- CSS Variables ---------- */
+
+/* ---------- Root Variables ---------- */
 :root {
+    /* Brand Colors */
     --purple-1: #56315a;
     --purple-2: #7a4b7c;
     --purple-3: #9a67a1;
-
     --rose: #c59aaa;
+
+    /* Text & Utility */
     --dark: #3b233c;
     --text: #2a1c29;
     --muted: #7b6b7c;
 
+    /* Background Tones */
     --bg-1: #fff9ef;
     --bg-2: #ead7df;
     --offwhite: #fffdfa;
+
+    /* Shadows */
+    --shadow-main: 0 4px 22px rgba(60, 40, 60, 0.15);
+    --shadow-soft: 0 1px 6px rgba(60, 40, 60, 0.08);
+    --shadow-inset: inset 0 0 8px rgba(255,255,255,0.3);
+
+    /* Border */
+    --border-soft: 1px solid rgba(122, 75, 124, 0.18);
 }
 
-/* Global */
+
+/* =====================================
+            GLOBAL STRUCTURE
+   ===================================== */
+
 body {
     margin: 0;
     font-family: "Segoe UI", Roboto, sans-serif;
@@ -26,22 +42,143 @@ body {
     background: linear-gradient(140deg, var(--bg-1), var(--bg-2));
 }
 
-/* Center wrapper */
+body.page-gradient {
+    min-height: 100vh;
+    padding: 32px 16px;
+}
+
+
+/* ---------- Universal Layout ---------- */
+
 .container {
     width: 100%;
-    max-width: 440px;
+    max-width: 880px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 24px;
 }
 
-/* Metallic Badge */
-.logo-badge {
-    width: 94px;
-    height: 94px;
+.grid {
+    width: 100%;
+    display: grid;
+    gap: 22px;
+}
+.grid-2 { grid-template-columns: 1fr 1fr; }
+@media(max-width: 580px) {
+    .grid-2 { grid-template-columns: 1fr; }
+}
+
+
+/* =====================================
+            GLASS CARD BASE
+   ===================================== */
+
+.glass-card {
+    max-width: 440px;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 16px;
+    border: var(--border-soft);
+    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-inset), var(--shadow-main), var(--shadow-soft);
+    padding: 22px 26px;
+    animation: cardFade .55s ease;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.glass-card h3 {
+    margin: 0 0 10px;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.glass-card p {
+    margin: 0;
+    color: var(--muted);
+}
+
+/* Accent line */
+.accent-line {
+    width: 38px;
+    height: 2px;
+    background: var(--purple-3);
+    border-radius: 4px;
+    opacity: 0.45;
+    margin: 4px 0 8px;
+}
+
+/* Coming soon text */
+.coming-soon {
+    font-size: 0.93rem;
+    font-weight: 600;
+    color: var(--purple-2);
+    margin: 2px 0 0;
+    opacity: 0.9;
+}
+
+.subtext {
+    font-size: 0.78rem;
+    letter-spacing: 0.2px;
+    color: var(--muted);
+}
+
+
+/* =====================================
+           NAVIGATION BAR
+   ===================================== */
+
+.ls-nav {
+    width: 100%;
+    padding: 12px 0;
+    position: sticky;
+    top: 0;
+    z-index: 12;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    /* Background */
+    background: linear-gradient(135deg, #2a152f 0%, #3d1e45 45%, #482055 85%);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(255,255,255,0.45);
+
+    /* Shadows */
+    box-shadow:
+        inset 0 1px 3px rgba(255,255,255,0.38),
+        inset 0 -2px 6px rgba(0,0,0,0.28),
+        0 6px 18px rgba(30, 10, 40, 0.55);
+
+    animation: navFade 0.6s ease;
+}
+
+.ls-nav-inner {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 30px;
+}
+
+/* Logo text */
+.ls-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255,255,255,0.96);
+    font-weight: 700;
+    font-size: 1.02rem;
+    letter-spacing: 0.6px;
+}
+
+/* Small circle badge */
+.ls-nav-brand-badge {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    position: relative;
     background: radial-gradient(
         circle at 35% 30%,
         #b68ebc 0%,
@@ -51,8 +188,88 @@ body {
         #2e1a33 100%
     );
     display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff;
+}
+
+/* Links */
+.ls-nav-links {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 0;
+    padding: 0;
+}
+
+.ls-nav-links li a,
+.logout-btn {
+    color: #fff;
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.97rem;
+    font-weight: 600;
+    transition:
+        background-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.25s ease;
+}
+
+.ls-nav-links li a:hover,
+.logout-btn:hover {
+    background: rgba(255,255,255,0.26);
+    box-shadow:
+        inset 0 2px 6px rgba(255,255,255,0.55),
+        inset 0 -1px 3px rgba(0,0,0,0.15);
+}
+
+.ls-nav-links li a.is-active {
+    background: rgba(255,255,255,0.34);
+    box-shadow:
+        inset 0 2px 6px rgba(255,255,255,0.65),
+        inset 0 -2px 6px rgba(0,0,0,0.28);
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+/* Phone layout */
+@media (max-width: 720px) {
+    .ls-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 18px;
+    }
+
+    .ls-nav-links {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 10px;
+    }
+}
+
+
+/* =====================================
+           COMPONENT: LOGO BADGE
+   ===================================== */
+
+.logo-badge {
+    width: 94px;
+    height: 94px;
+    border-radius: 50%;
+    position: relative;
+
+    display: flex;
     justify-content: center;
     align-items: center;
+
     font-size: 42px;
     font-weight: 800;
     letter-spacing: 1px;
@@ -60,15 +277,27 @@ body {
     text-shadow:
         0 1px 2px rgba(255,255,255,0.6),
         0 -1px 2px rgba(0,0,0,0.5);
+
+    background: radial-gradient(
+        circle at 35% 30%,
+        #b68ebc 0%,
+        #8d5a95 28%,
+        #6e3f74 50%,
+        #4b2c50 75%,
+        #2e1a33 100%
+    );
+
     box-shadow:
         inset 0 -16px 26px rgba(0,0,0,0.45),
         inset 0 4px 12px rgba(255,255,255,0.28),
         inset 0 0 22px rgba(0,0,0,0.5),
         0 12px 28px rgba(60, 30, 70, 0.5);
+
     border: 2px solid rgba(255,255,255,0.65);
     animation: floatIn 0.6s ease;
 }
 
+/* Highlights */
 .logo-badge::before,
 .logo-badge::after {
     content: "";
@@ -107,69 +336,57 @@ body {
     filter: blur(1.2px);
 }
 
-@keyframes floatIn {
-    from { opacity:0; transform: translateY(12px); }
-    to   { opacity:1; transform: translateY(0); }
-}
 
-/* Login Card */
+/* =====================================
+          LOGIN PAGE BLOCK
+   ===================================== */
+
 .login-layout {
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* move away from top edge a bit */
-    padding-top: 56px; /* pushes layout visually into central space */
-    padding-bottom: 56px;
+    align-items: flex-start;
+    padding: 56px 0;
 }
-
 @media (max-height: 900px) {
     .login-layout {
-        align-items: flex-start;
         padding-top: 32px;
     }
 }
 
-.card {
+/* Authentication Card */
+.auth-card {
     width: 100%;
-    background: rgba(255, 255, 255, 0.92);
-    padding: 46px 32px 34px;
-    border-radius: 18px;
-    border: 2px solid rgba(122, 75, 124, 0.16);
-    backdrop-filter: blur(8px);
-    box-shadow:
-        inset 0 0 12px rgba(255,255,255,0.4),
-        0 8px 32px rgba(60, 40, 60, 0.15),
-        0 2px 8px rgba(60, 40, 60, 0.08);
-    animation: cardFade .55s ease;
+    max-width: 640px;
+    padding: 46px 40px 38px;
+    text-align: center;
+    margin: 0 auto;
 }
 
-@keyframes cardFade {
-    from { opacity: 0; transform: translateY(12px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
 
-/* Branding Inside Card */
+
+/* Branding Text */
 .brand {
     text-align: center;
     margin-bottom: 28px;
 }
-
 .brand h1 {
     font-size: 30px;
     font-weight: 800;
-    letter-spacing: 0.6px;
     color: var(--dark);
     margin: 0 0 6px;
 }
-
 .brand p {
     font-size: 15px;
-    letter-spacing: 0.3px;
     color: var(--muted);
     margin: 0;
 }
 
-/* Form */
+
+/* =====================================
+             FORM CONTROLS
+   ===================================== */
+
 form {
     display: flex;
     flex-direction: column;
@@ -182,57 +399,75 @@ form {
     gap: 7px;
 }
 
-/* Elegant labels */
 label {
     font-size: 15px;
     font-weight: 700;
     color: var(--dark);
     letter-spacing: 0.35px;
-    margin-left: 2px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
-/* Inputs */
-input {
+.field-group label {
+    text-align: left;
+}
+
+input,
+select {
     padding: 15px 14px;
     background: rgba(255,255,255,0.85);
     border: 1px solid rgba(121, 85, 122, 0.35);
     border-radius: 9px;
     font-size: 15px;
-    color: var(--text);
     transition: border .22s, box-shadow .22s, background .22s;
+    color: var(--text);
 }
 
-input:hover {
+input:hover,
+select:hover {
     background: rgba(255,255,255,0.95);
 }
 
-input:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: var(--rose);
-    background: rgba(255,255,255,1);
+    background: white;
     box-shadow: 0 0 0 4px rgba(197, 154, 170, 0.35);
 }
 
-/* Login Button */
-button {
-    margin-top: 6px;
-    padding: 15px;
-    font-size: 17px;
-    font-weight: 600;
+
+/* Buttons */
+button,
+.btn {
+    display: inline-block;
+    padding: 11px 18px;
     border-radius: 8px;
-    border: none;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    background: var(--purple-2);
-    color: white;
-    letter-spacing: .5px;
     transition: opacity .22s, transform .12s;
+    border: none;
 }
 
-button:hover { opacity: .92; }
-button:active { transform: scale(.97); }
+button:hover,
+.btn:hover { opacity: .92; }
+button:active,
+.btn:active { transform: scale(.97); }
 
-/* Alerts */
+.btn-primary,
+button {
+    background: var(--purple-2);
+    color: #fff;
+}
+
+.btn-secondary {
+    background: var(--dark);
+    color: #fff;
+}
+
+
+/* Alert Messages */
 .message {
     margin-top: 16px;
     padding: 11px 12px;
@@ -243,311 +478,90 @@ button:active { transform: scale(.97); }
 .error { background: #ffe7eb; color: #8e0a20; }
 .logout { background: #e5f5e7; color: #1e582c; }
 
-/* Register Link */
 .register {
     margin-top: 24px;
     text-align: center;
 }
-
 .register a {
-    text-decoration: none;
-    display: inline-block;
-    padding: 12px 22px;
-    background: var(--dark);
-    color: #fff;
-    font-weight: 600;
-    border-radius: 8px;
-    letter-spacing: .4px;
-    transition: opacity .22s, transform .12s;
-}
-
-.register a:hover { opacity: .88; }
-.register a:active { transform: scale(.97) }
-
-/* =========================
-   NAVIGATION BAR – SHARED
-   ========================= */
-
-.ls-nav {
-    width: 100%;
-    padding: 12px 0px;
-
-    /* Extremely high contrast vs page background */
-    background: linear-gradient(
-        135deg,
-        #2a152f 0%,
-        #3d1e45 45%,
-        #482055 85%
-    );
-
-    backdrop-filter: blur(8px);
-
-    border-bottom: 1px solid rgba(255,255,255,0.45);
-
-    position: sticky;
-    top: 0;
-    z-index: 12;
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-
-    box-shadow:
-        inset 0 1px 3px rgba(255,255,255,0.38),
-        inset 0 -2px 6px rgba(0,0,0,0.28),
-        0 6px 18px rgba(30, 10, 40, 0.55);
-
-    animation: navFade 0.6s ease;
-}
-.ls-nav-inner {
-    width: 100%;
-    padding: 0 30px; /* same spacing both sides */
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-}
-
-@keyframes navFade {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* Brand / logo area */
-.ls-nav-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    color: rgba(255,255,255,0.96);
-    letter-spacing: 0.6px;
-    font-size: 1.02rem;
-}
-
-.ls-nav-brand-badge {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: radial-gradient(
-        circle at 35% 30%,
-        #b68ebc 0%,
-        #8d5a95 28%,
-        #6e3f74 50%,
-        #4b2c50 75%,
-        #2e1a33 100%
-    );
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 16px;
-    font-weight: 800;
-    color: #fff;
-}
-
-/* Link list */
-.ls-nav-links {
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin: 0;
-    padding: 0;
-}
-
-.ls-nav-links li a {
-    font-size: 0.97rem;
-    font-weight: 600;
-    color: #fff;
-    text-decoration: none;
-    padding: 6px 12px;
-    border-radius: 999px;
-    letter-spacing: 0.25px;
-    transition:
-        background-color 0.18s ease,
-        color 0.18s ease,
-        box-shadow 0.25s ease;
-}
-
-.ls-nav-links li a:hover {
-    background: rgba(255,255,255,0.26);
-    color: #fff;
-    box-shadow:
-        inset 0 2px 6px rgba(255,255,255,0.55),
-        inset 0 -1px 3px rgba(0,0,0,0.15);
-}
-
-.ls-nav-links li a.is-active {
-    background: rgba(255,255,255,0.34);
-    color: #fff;
-    box-shadow:
-        inset 0 2px 6px rgba(255,255,255,0.65),
-        inset 0 -2px 6px rgba(0,0,0,0.28);
-}
-
-.ls-nav-links li.logout-link a {
-    font-weight: 700;
-}
-
-.logout-btn {
-    background: none;
-    border: none;
-    color: rgba(255,255,255,0.92);
-    font-size: 0.97rem;
-    font-weight: 700;
-    cursor: pointer;
-    padding: 6px 12px;
-    border-radius: 999px;
-}
-.logout-btn:hover {
-    background: rgba(255,255,255,0.26);
-    color: #fff;
-}
-
-
-/* Responsive */
-@media (max-width: 720px) {
-    .ls-nav {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-        padding: 10px 18px;
-    }
-
-    .ls-nav-links {
-        flex-wrap: wrap;
-        justify-content: flex-start;
-        gap: 10px;
-    }
-}
-
-/* ================================
-      DASHBOARD PAGE STYLES
-   ================================ */
-
-.page-gradient {
-    background: linear-gradient(140deg, var(--bg-1), var(--bg-2));
-    min-height: 100vh;
-    padding: 32px 16px;
-}
-
-/* Card styling reused on dashboards */
-.card {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.92);
-    padding: 26px 22px;
-    border-radius: 14px;
-    border: 1px solid rgba(122, 75, 124, 0.13);
-    backdrop-filter: blur(8px);
-    box-shadow:
-        inset 0 0 8px rgba(255,255,255,0.3),
-        0 4px 22px rgba(60, 40, 60, 0.15),
-        0 1px 6px rgba(60, 40, 60, 0.08);
-}
-
-.card h3 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    font-size: 1.1rem;
-    color: var(--dark);
-}
-
-.card p {
-    margin: 0;
-    color: var(--muted);
-}
-
-/* Grid layout */
-.grid {
-    width: 100%;
-    display: grid;
-    gap: 22px;
-}
-
-.grid-2 {
-    grid-template-columns: 1fr 1fr;
-}
-
-@media(max-width: 580px) {
-    .grid-2 {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Buttons */
-.btn {
     display: inline-block;
     padding: 11px 18px;
     border-radius: 8px;
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 600;
-    transition: opacity 0.22s, transform 0.12s;
-}
-
-.btn-primary {
-    background: var(--purple-2);
-    color: #fff;
-}
-
-.btn-primary:hover { opacity: .92; }
-
-.btn-secondary {
     background: var(--dark);
     color: #fff;
+    transition: opacity 0.22s, transform 0.12s;
+    margin-top: 18px;
 }
 
-.btn-secondary:hover { opacity: .92; }
+.register a:hover { opacity: .92; }
+.register a:active { transform: scale(.97); }
 
-body.page-gradient { display: block; }
+/* ---------------------------------
+   PROFILE PAGE STYLING
+---------------------------------- */
 
-/* ================================
-      PROFILE PAGE STYLES
-   ================================ */
 .profile-layout {
-    min-height: calc(100vh - 72px); /* subtract navbar height */
+    margin-top: 56px;    /* space below nav */
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: 32px 16px; /* protects content on short screens */
+    width: 100%;
+    padding: 0 16px;
 }
 
-@media (max-height: 740px) {
-    .profile-layout {
-        align-items: flex-start; /* prevent cramped look on small heights */
-        padding-top: 42px;
-    }
-}
-
+/* Info Display Fields (email & role) */
 .info-display {
-    padding: 14px 16px;
-    background: rgba(255,255,255,0.72);
-    border-radius: 10px;
-    border: 1px solid rgba(0,0,0,0.08);
-    color: var(--dark);
-    font-weight: 600;
-    font-size: 0.95rem;
-    letter-spacing: 0.3px;
-}
-
-select {
-    padding: 15px 14px;
-    background: rgba(255,255,255,0.85);
-    border: 1px solid rgba(121, 85, 122, 0.35);
+    text-align: left;
+    padding: 14px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(121, 85, 122, 0.25);
     border-radius: 9px;
     font-size: 15px;
-    color: var(--text);
-    transition: border .22s, box-shadow .22s, background .22s;
+    color: var(--dark);
+    box-shadow: var(--shadow-soft);
+    min-height: 48px;
+    display: flex;
+    align-items: center;
 }
 
-select:hover {
-    background: rgba(255,255,255,0.95);
+/* Profile Title */
+.profile-title {
+    margin-top: 0;
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--dark);
+    letter-spacing: .4px;
 }
 
-select:focus {
-    outline: none;
-    border-color: var(--rose);
-    background: rgba(255,255,255,1);
-    box-shadow: 0 0 0 4px rgba(197, 154, 170, 0.35);
+/* Divider */
+.divider {
+    margin: 28px 0;
+    height: 1px;
+    width: 100%;
+    border: none;
+    background: rgba(0, 0, 0, 0.12);
 }
 
+
+
+/* =====================================
+         ANIMATIONS
+   ===================================== */
+
+@keyframes floatIn {
+    from { opacity:0; transform: translateY(12px); }
+    to   { opacity:1; transform: translateY(0); }
+}
+
+@keyframes cardFade {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes navFade {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
