@@ -29,13 +29,13 @@
 <!-- ============================
      CUSTOMER DASHBOARD
 ============================= -->
-<main class="container" sec:authorize="hasRole('CUSTOMER')">
+<main class="home-layout" sec:authorize="hasRole('CUSTOMER')">
 
     <!-- Greeting -->
     <h2 th:text="'Welcome, ' + (${firstName} ?: 'Guest') + '!'"></h2>
 
     <!-- Walk-In Wait Time -->
-    <section class="glass-card">
+    <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
         <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
@@ -46,7 +46,7 @@
     <div class="grid grid-2">
 
         <!-- Next Appointment -->
-        <section class="glass-card">
+        <section class="glass-card home-card">
             <h3>Your Next Appointment</h3>
 
             <!-- Keep the placeholder headline -->
@@ -79,7 +79,7 @@
         </section>
 
         <!-- Rewards Points -->
-        <section class="glass-card">
+        <section class="glass-card home-card">
             <h3>Rewards Points</h3>
             <p class="coming-soon">Coming Soon</p>
             <div class="accent-line"></div>
@@ -94,12 +94,12 @@
 <!-- ============================
      STYLIST DASHBOARD
 ============================= -->
-<main class="container" sec:authorize="hasRole('STYLIST')">
+<main class="home-layout" sec:authorize="hasRole('STYLIST')">
 
     <h2 th:text="'Good Morning, ' + (${firstName} ?: 'Stylist') + '!'"></h2>
     
     <!-- Walk-In Wait Time -->
-    <section class="glass-card">
+    <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
         <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
@@ -109,7 +109,7 @@
      <!-- Two-column customer widgets -->
     <div class="grid grid-2">
 
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Your Next Appointment</h3>
 	
 	        <!-- Main placeholder text -->
@@ -142,7 +142,7 @@
 	    </section>
 	    
 	    <!-- Stylist Availability Card -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Your Availability</h3>
 	
 	        <p class="coming-soon">Coming Soon</p>
@@ -167,7 +167,7 @@
     <div class="grid grid-2">
     
 	    <!-- Completed Services Count -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Completed Services</h3>
 	
 	        <!-- Main placeholder -->
@@ -191,7 +191,7 @@
 	    </section>
 	    
 	    <!-- Top 3 Services -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Your Top Service Types</h3>
 	
 	        <p class="coming-soon">Coming Soon</p>
@@ -227,11 +227,11 @@
 <!-- ============================
      OWNER DASHBOARD
 ============================= -->
-<main class="container" sec:authorize="hasRole('OWNER')">
+<main class="home-layout" sec:authorize="hasRole('OWNER')">
 
     <h2 th:text="'Welcome Back, ' + (${firstName} ?: 'Owner')"></h2>
 
-    <section class="glass-card">
+    <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
         <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
@@ -242,7 +242,7 @@
     <div class="grid grid-2">
     
     	<!-- Total Appointments Today -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Appointments Today</h3>
 	        <p class="coming-soon">Coming Soon</p>
 	        <div class="accent-line"></div>
@@ -263,7 +263,7 @@
 	    </section>
 	    
 	    <!-- Active Stylists on Staff -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Active Stylists</h3>
 	        <p class="coming-soon">Coming Soon</p>
 	        <div class="accent-line"></div>
@@ -288,7 +288,7 @@
     <div class="grid grid-2">
     	
     	<!-- Total Services Completed (All Stylists) -->
-		<section class="glass-card">
+		<section class="glass-card home-card">
 		    <h3>Total Services Completed</h3>
 		
 		    <p class="coming-soon">Coming Soon</p>
@@ -312,7 +312,7 @@
 		</section>
     	
     	<!-- Top Service Categories -->
-	    <section class="glass-card">
+	    <section class="glass-card home-card">
 	        <h3>Top Services</h3>
 	        <p class="coming-soon">Coming Soon</p>
 	        <div class="accent-line"></div>

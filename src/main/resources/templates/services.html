@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <title>Services</title>
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+<body class="page-gradient">
+
+<header>
+    <div sec:authorize="hasRole('CUSTOMER')" th:replace="~{fragments/customer-nav :: customerNav}"></div>
+    <div sec:authorize="hasRole('STYLIST')" th:replace="~{fragments/stylist-nav :: stylistNav}"></div>
+    <div sec:authorize="hasRole('OWNER')" th:replace="~{fragments/owner-nav :: ownerNav}"></div>
+</header>
+
+<!-- USE NEW LAYOUT -->
+<main class="services-layout">
+
+    <!-- Header card -->
+    <div>
+        <h2 class="profile-title" style="margin-bottom: 8px;">Our Services</h2>
+        <p class="subtext" style="text-align:center;">
+            Prices displayed are base prices. Extra cost may be added for hair length,
+            thickness, or service complexity.
+        </p>
+    </div>
+
+    <!-- Category cards -->
+    <div th:each="category : ${categories}"
+         class="glass-card services-card">
+
+        <h3 th:text="${category.categoryName}"></h3>
+        <div class="accent-line"></div>
+
+        <table style="width:100%; margin-top:12px;">
+            <tr th:each="service : ${category.services}"
+                th:if="${service.isAvailable}">
+
+                <td th:text="${service.name}" style="text-align:left;"></td>
+
+                <td th:text="${#numbers.formatDecimal(service.basePrice,1,2)}"
+                    style="text-align:center; font-weight:bold; width:90px;">
+                </td>
+
+                <!-- CUSTOMER BUTTON -->
+                <td sec:authorize="hasRole('CUSTOMER')" style="text-align:right; width:90px;">
+                    <a th:href="@{/customer/schedule(serviceId=${service.id})}"
+                       class="btn btn-primary">
+                        Schedule
+                    </a>
+                </td>
+
+                <!-- STYLIST VIEW ONLY -->
+                <td sec:authorize="hasRole('STYLIST')"></td>
+            </tr>
+        </table>
+
+    </div>
+
+</main>
+
+</body>
+</html>
