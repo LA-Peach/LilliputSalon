@@ -1,13 +1,13 @@
 package com.LilliputSalon.SalonApp.service;
 
-import com.LilliputSalon.SalonApp.domain.ServiceCategory;
-import com.LilliputSalon.SalonApp.repository.ServiceRepository;
-import com.LilliputSalon.SalonApp.repository.ServiceCategoryRepository;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import com.LilliputSalon.SalonApp.domain.ServiceCategory;
+import com.LilliputSalon.SalonApp.repository.ServiceCategoryRepository;
+import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 
 //Cannot import the Service entity normally due to its name and conflicts
 
@@ -54,4 +54,14 @@ public class ServiceService {
     public boolean serviceNameExists(String name) {
         return serviceRepo.existsByNameIgnoreCase(name);
     }
+
+    public void unarchive(Long id) {
+        serviceRepo.findById(id).ifPresent(s -> {
+            s.setIsAvailable(true);
+            serviceRepo.save(s);
+        });
+    }
+
+
+
 }

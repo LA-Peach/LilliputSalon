@@ -30,6 +30,63 @@
     --border-soft: 1px solid rgba(122, 75, 124, 0.18);
 }
 
+/* ---------------------------
+      OWNER ACCORDION
+---------------------------- */
+
+.accordion-card {
+    padding: 0; /* override default padding */
+}
+
+.accordion-header {
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.accordion-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+}
+
+.accordion-icon {
+    transition: transform .25s ease;
+    font-size: 1.2rem;
+    color: var(--purple-2);
+}
+
+.accordion-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* Initially collapsed */
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height .35s ease;
+    padding: 0 22px;
+}
+
+/* Expanded */
+.accordion-content.open {
+    max-height: 900px; /* more than enough */
+    padding-bottom: 18px;
+    margin-top: 6px;
+}
+
+.btn-danger {
+    background: #b63747;
+    color: white;
+}
+
+.btn-small {
+    padding: 6px 10px !important;
+    font-size: 0.8rem;
+    border-radius: 6px;
+}
 
 /* =====================================
             GLOBAL STRUCTURE
@@ -583,6 +640,14 @@ button {
     padding: 32px;
 }
 
+.modal-card .field-group {
+    margin-bottom: 16px;
+}
+
+.modal-card input, 
+.modal-card textarea {
+    width: 100%;
+}
 
 .services-layout {
     margin-top: 56px;          /* space under nav */

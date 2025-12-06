@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Manage Services</title>
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+
+<body class="page-gradient">
+
+<header>
+    <div th:replace="~{fragments/owner-nav :: ownerNav}"></div>
+</header>
+
+<main class="services-layout">
+
+    <!-- Header -->
+    <div>
+        <h2 class="profile-title">Manage Services</h2>
+        <p class="subtext" style="text-align:center;">
+            Expand a category to manage services.
+        </p>
+    </div>
+
+    <!-- Accordion for each category -->
+    <div th:each="category : ${categories}"
+         class="glass-card services-card accordion-card">
+
+        <!-- Accordion Header -->
+        <div class="accordion-header"
+             onclick="toggleAccordion(this)">
+            <span th:text="${category.categoryName}" class="accordion-title"></span>
+
+            <a href="#"
+			   class="btn btn-primary btn-small"
+			   th:attr="onclick=|openAddService(${category.id})|">
+			   + Add Service
+			</a>
+
+
+            <span class="accordion-icon">▼</span>
+        </div>
+
+        <!-- Accordion Content -->
+        <div class="accordion-content">
+
+            <table style="width:100%; margin-top:12px;">
+                <tr th:each="service : ${category.services}">
+
+                    <td th:text="${service.name}" style="text-align:left;"></td>
+
+                    <td th:text="${#numbers.formatDecimal(service.basePrice,1,2)}"
+                        style="text-align:right; font-weight:bold; width:90px;">
+                    </td>
+
+                    <!-- Edit Button -->
+                    <td style="text-align:right; width:80px;">
+                        <a href="#" class="btn btn-secondary btn-small"
+						   th:attr="onclick=|openEditService(${service.id}); return false;|">
+						    Edit
+						</a>
+                    </td>
+
+                    <td style="text-align:right; width:120px;">
+
+						    <!-- If service is active → show Disable -->
+						    <form th:if="${service.isAvailable}"
+						          th:action="@{/serviceManagement/deactivate/{id}(id=${service.id})}"
+						          method="post"
+						          style="display:inline;">
+						          
+						        <input type="hidden"
+						               th:name="${_csrf.parameterName}"
+						               th:value="${_csrf.token}" />
+						
+						        <button type="submit" class="btn btn-danger btn-small">
+						            Disable
+						        </button>
+						    </form>
+						
+						    <!-- If inactive → show Enable -->
+						    <form th:if="${!service.isAvailable}"
+						          th:action="@{/serviceManagement/activate/{id}(id=${service.id})}"
+						          method="post"
+						          style="display:inline;">
+						          
+						        <input type="hidden"
+						               th:name="${_csrf.parameterName}"
+						               th:value="${_csrf.token}" />
+						
+						        <button type="submit" class="btn btn-primary btn-small">
+						            Enable
+						        </button>
+						    </form>
+						
+						</td>
+
+                </tr>
+            </table>
+
+        </div>
+
+    </div>
+
+<!-- SERVICE MODAL (Add & Edit) -->
+<div id="serviceModal" class="modal-overlay" style="display:none;">
+
+    <div class="modal-card glass-card">
+
+        <h3 id="modalTitle" style="text-align:center; margin-bottom:12px;">Add Service</h3>
+
+        <form id="serviceForm" th:action="@{/serviceManagement/add}" method="post">
+
+            <!-- Hidden Fields -->
+            <input type="hidden" id="modalServiceId" name="id">
+            <input type="hidden" id="modalCategoryId" name="categoryId">
+
+            <div class="field-group">
+                <label>Service Name</label>
+                <input id="modalName" name="name" required>
+            </div>
+
+            <div class="field-group">
+                <label>Description</label>
+                <textarea id="modalDescription" name="description" rows="3"></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Base Price</label>
+                <input id="modalPrice" name="basePrice" type="number" step="1.00" required>
+            </div>
+
+            <div class="field-group">
+                <label>Typical Duration (minutes)</label>
+                <input id="modalDuration" name="typicalDurationMinutes" type="number" required>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; margin-top:20px;">
+                <button type="button" class="btn-secondary" onclick="closeServiceModal()">
+                    Cancel
+                </button>
+
+                <button id="modalSubmitBtn" type="submit" class="btn-primary">
+                    Save Service
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+</main>
+
+<!-- Accordion JS -->
+<script>
+function toggleAccordion(header) {
+    const card = header.parentElement;
+    const content = card.querySelector(".accordion-content");
+    const icon = header.querySelector(".accordion-icon");
+
+    content.classList.toggle("open");
+    icon.classList.toggle("rotated");
+}
+</script>
+
+<script>
+function openAddService(categoryId) {
+	// Reset form
+    document.getElementById("serviceForm").reset();
+
+    // Set defaults
+    document.getElementById("modalTitle").innerText = "Add Service";
+    document.getElementById("serviceForm").action = "/serviceManagement/add";
+
+    document.getElementById("modalServiceId").value = "";
+    document.getElementById("modalCategoryId").value = categoryId;
+
+    // Show modal
+    document.getElementById("serviceModal").style.display = "flex";
+}
+
+function openEditService(serviceId) {
+
+    document.getElementById("modalTitle").innerText = "Edit Service";
+    document.getElementById("serviceForm").action = "/serviceManagement/edit";
+
+    fetch(`/serviceManagement/get/${serviceId}`)
+        .then(response => response.json())
+        .then(service => {
+
+            document.getElementById("modalServiceId").value = service.id;
+            document.getElementById("modalCategoryId").value = service.categoryId;
+
+            document.getElementById("modalName").value = service.name;
+            document.getElementById("modalDescription").value = service.description ?? "";
+            document.getElementById("modalPrice").value = service.basePrice;
+            document.getElementById("modalDuration").value = service.typicalDurationMinutes;
+
+            document.getElementById("serviceModal").style.display = "flex";
+        })
+        .catch(err => console.error("ERROR fetching service:", err));
+}
+
+
+
+function closeServiceModal() {
+    document.getElementById("serviceModal").style.display = "none";
+}
+
+
+// Close modal when clicking outside card
+document.addEventListener('click', function(e) {
+    const overlay = document.getElementById("serviceModal");
+    const card = document.querySelector(".modal-card");
+
+    if (e.target === overlay) {
+        closeServiceModal();
+    }
+});
+</script>
+
+
+</body>
+</html>

@@ -1,9 +1,10 @@
 package com.LilliputSalon.SalonApp.repository;
 
-import com.LilliputSalon.SalonApp.domain.ServiceCategory;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
+import com.LilliputSalon.SalonApp.domain.ServiceCategory;
 
 public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, Long> {
 
