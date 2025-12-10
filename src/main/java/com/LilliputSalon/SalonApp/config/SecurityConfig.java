@@ -46,27 +46,34 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(
             HttpSecurity http,
             CustomAuthFailureHandler failureHandler,
-            RoleRedirectSuccessHandler successHandler,  // <-- add
+            RoleRedirectSuccessHandler successHandler,
             AuthenticationManager authenticationManager
     ) throws Exception {
 
         http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/login", "/register" ,"/css/**").permitAll()
+            // Allow POST /calendar/update without CSRF token (needed for FullCalendar drag/drop)
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/calendar/update")
+            )
 
-             // Role-based route protections
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login", "/register", "/css/**").permitAll()
+
+                // Role-based route protections
                 .requestMatchers("/owner/**").hasRole("OWNER")
                 .requestMatchers("/stylist/**").hasRole("STYLIST")
                 .requestMatchers("/customer/**").hasRole("CUSTOMER")
 
                 .anyRequest().authenticated()
             )
+
             .formLogin(form -> form
                 .loginPage("/login")
                 .failureHandler(failureHandler)
-                .successHandler(successHandler) // <-- use handler
+                .successHandler(successHandler)
                 .permitAll()
             )
+
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/login?logout")
@@ -76,6 +83,7 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 
 
     @Bean
