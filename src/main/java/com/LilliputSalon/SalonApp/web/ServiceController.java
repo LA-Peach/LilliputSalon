@@ -8,15 +8,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
-import com.LilliputSalon.SalonApp.service.ServiceService;
+import com.LilliputSalon.SalonApp.service.ServiceManagerService;
 
 @Controller
 @RequestMapping("/services")
 public class ServiceController {
 
-    private final ServiceService serviceService;
+    private final ServiceManagerService serviceService;
 
-    public ServiceController(ServiceService serviceService) {
+    public ServiceController(ServiceManagerService serviceService) {
         this.serviceService = serviceService;
     }
 

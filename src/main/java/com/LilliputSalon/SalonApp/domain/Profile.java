@@ -14,7 +14,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "[Profile]", schema = "dbo")
+@Table(name = "Profile", schema = "dbo")
 @Getter
 @Setter
 public class Profile {
@@ -22,7 +22,7 @@ public class Profile {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ProfileID")
-    private Long id;
+    private Long profileId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "UserID", nullable = false)
@@ -30,7 +30,7 @@ public class Profile {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "UserTypeID", nullable = false)
-    private UserType userType;
+    private UserType userType; 
 
     @Column(name = "FirstName", length = 100)
     private String firstName;
@@ -52,5 +52,4 @@ public class Profile {
 
     @Column(name = "IsActiveStylist")
     private Boolean isActiveStylist;
-
 }

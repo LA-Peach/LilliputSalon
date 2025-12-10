@@ -15,15 +15,15 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.LilliputSalon.SalonApp.domain.Service;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
-import com.LilliputSalon.SalonApp.service.ServiceService;
+import com.LilliputSalon.SalonApp.service.ServiceManagerService;
 
 @Controller
 @PreAuthorize("hasRole('OWNER')")
 public class ServiceManagementController {
 
-    private final ServiceService serviceService;
+    private final ServiceManagerService serviceService;
 
-    public ServiceManagementController(ServiceService serviceService) {
+    public ServiceManagementController(ServiceManagerService serviceService) {
         this.serviceService = serviceService;
     }
 

@@ -1,0 +1,40 @@
+package com.LilliputSalon.SalonApp.repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import com.LilliputSalon.SalonApp.domain.Appointment;
+
+@Repository
+public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
+
+    List<Appointment> findByCustomerId(Integer customerId);
+
+    List<Appointment> findByStylistId(Integer stylistId);
+
+    List<Appointment> findByScheduledStartDateTimeBetween(LocalDateTime start, LocalDateTime end);
+
+    List<Appointment> findByStylistIdAndScheduledStartDateTimeBetween(
+            Integer stylistId,
+            LocalDateTime start,
+            LocalDateTime end
+    );
+
+    // Find the earliest future appointment for this stylist
+    Optional<Appointment> findFirstByStylistIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
+            Integer stylistId,
+            LocalDateTime after
+    );
+
+    // Next appointment for a customer
+    Optional<Appointment> findFirstByCustomerIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
+            Integer customerId,
+            LocalDateTime after
+    );
+
+
+}

@@ -12,12 +12,12 @@ import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 //Cannot import the Service entity normally due to its name and conflicts
 
 @Service
-public class ServiceService {
+public class ServiceManagerService {
 
     private final ServiceRepository serviceRepo;
     private final ServiceCategoryRepository categoryRepo;
 
-    public ServiceService(ServiceRepository serviceRepo, ServiceCategoryRepository categoryRepo) {
+    public ServiceManagerService(ServiceRepository serviceRepo, ServiceCategoryRepository categoryRepo) {
         this.serviceRepo = serviceRepo;
         this.categoryRepo = categoryRepo;
     }

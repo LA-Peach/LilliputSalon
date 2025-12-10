@@ -44,4 +44,5 @@ public class Service {
     @Column(name = "IsAvailable", nullable = false)
     private Boolean isAvailable;
 
+
 }

@@ -45,38 +45,27 @@
     <!-- Two-column customer widgets -->
     <div class="grid grid-2">
 
-        <!-- Next Appointment -->
-        <section class="glass-card home-card">
-            <h3>Your Next Appointment</h3>
+       <section class="glass-card home-card">
+		    <h3>Your Next Appointment</h3>
+		    <div class="accent-line"></div>
+		
+		    <!-- Appointment exists -->
+		    <div th:if="${nextAppointment != null}">
+		        <p class="subtext">
+		            <span th:text="${#temporals.format(nextAppointment.dateTime, 'MMMM d, yyyy h:mm a')}"></span>
+		            <span th:text="' · ' + ${nextAppointment.providerName}"></span>
+		            <span th:text="' · ' + ${nextAppointment.serviceName}"></span>
+		        </p>
+		        <a class="button" href="/appointments" role="button">View / Manage</a>
+		    </div>
+		
+		    <!-- No appointment -->
+		    <div th:if="${nextAppointment == null}">
+		        <p class="subtext">No appointments currently booked</p>
+		        <a class="btn btn-secondary" href="/appointments/schedule" role="button">Schedule Now</a>
+		    </div>
+		</section>
 
-            <!-- Keep the placeholder headline -->
-            <p class="coming-soon">Coming Soon</p>
-            <div class="accent-line"></div>
-
-            <!-- If an appointment exists, show a subtle preview under the placeholder -->
-            <div th:if="${nextAppointment != null}">
-                <p class="subtext">
-                    <span th:text="${#temporals.format(nextAppointment.dateTime, 'MMMM d, yyyy h:mm a')}">
-                        <!-- Next appointment date/time -->
-                    </span>
-                    <span th:if="${nextAppointment.providerName}"
-                          th:text="' · ' + ${nextAppointment.providerName}">
-                        <!-- Provider -->
-                    </span>
-                    <span th:if="${nextAppointment.serviceName}"
-                          th:text="' · ' + ${nextAppointment.serviceName}">
-                        <!-- Service -->
-                    </span>
-                </p>
-                <a class="button" href="/appointments" role="button">View / Manage</a>
-            </div>
-
-            <!-- If no appointment yet, show the existing “no data” message + CTA -->
-            <div th:if="${nextAppointment == null}">
-                <p class="subtext">No appointments currently booked</p>
-                <a class="btn btn-secondary" href="/appointments/schedule" role="button">Schedule Now</a>
-            </div>
-        </section>
 
         <!-- Rewards Points -->
         <section class="glass-card home-card">
@@ -111,11 +100,8 @@
 
 	    <section class="glass-card home-card">
 	        <h3>Your Next Appointment</h3>
-	
-	        <!-- Main placeholder text -->
-	        <p class="coming-soon">Coming Soon</p>
-	        <div class="accent-line"></div>
-	
+			<div class="accent-line"></div>
+			
 	        <!-- If a next appointment exists, show details -->
 	        <div th:if="${nextStylistAppointment != null}">
 	            <p class="subtext">

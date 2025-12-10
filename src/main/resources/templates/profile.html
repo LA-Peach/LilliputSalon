@@ -36,9 +36,10 @@
               method="post">
 
             <!-- Hidden Fields -->
-            <input type="hidden" th:field="*{id}">
-            <input type="hidden" th:field="*{user}">
-            <input type="hidden" th:field="*{userType}">
+            <input type="hidden" th:field="*{profileId}" />
+			<input type="hidden" th:field="*{user.id}" />
+			<input type="hidden" th:field="*{userType.id}" />
+
 
             <!-- Static Fields: Email + Role -->
             <div class="grid grid-2">

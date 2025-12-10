@@ -7,14 +7,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 
 import com.LilliputSalon.SalonApp.security.RegistrationRequest;
-import com.LilliputSalon.SalonApp.service.RegistrationService;
+import com.LilliputSalon.SalonApp.service.RegistrationManagerService;
 
 @Controller
 public class RegistrationController {
 
-    private final RegistrationService registrationService;
+    private final RegistrationManagerService registrationService;
 
-    public RegistrationController(RegistrationService registrationService) {
+    public RegistrationController(RegistrationManagerService registrationService) {
         this.registrationService = registrationService;
     }
 

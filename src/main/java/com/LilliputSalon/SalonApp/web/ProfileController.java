@@ -54,7 +54,7 @@ public class ProfileController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Find existing profile or build a default one
-        Profile profile = profileRepo.findByUserId(userId)
+        Profile profile = profileRepo.findByUser_Id(userId)
                 .orElseGet(() -> {
                     Profile p = new Profile();
                     p.setUser(user);
@@ -101,7 +101,7 @@ public class ProfileController {
             return "profile";
         }
 
-        Profile existing = profileRepo.findById(formProfile.getId())
+        Profile existing = profileRepo.findById(formProfile.getProfileId())
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         // Lock user & userType so the form cannot overwrite them
