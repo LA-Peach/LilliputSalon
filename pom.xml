@@ -18,6 +18,11 @@
 		<java.version>17</java.version>
 	</properties>
   <dependencies>
+  
+	 <dependency>
+	    <groupId>com.fasterxml.jackson.core</groupId>
+	    <artifactId>jackson-databind</artifactId>
+	</dependency>
     <!-- Spring MVC / Web -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

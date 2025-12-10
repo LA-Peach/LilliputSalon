@@ -114,6 +114,10 @@ public class AppointmentManagerService {
 
         repo.save(appt);
     }
+    
+    public List<Appointment> getAllAppointments() {
+        return repo.findAll();
+    }
 
 
     public Appointment save(Appointment a) {

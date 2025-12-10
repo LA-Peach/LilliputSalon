@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Salon Calendar</title>
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+
+    <!-- FullCalendar Stylesheet Only -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/main.min.css" rel="stylesheet">
+
+    <style>
+        #calendar {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: var(--glass-bg);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+        }
+    </style>
+</head>
+
+<body class="page-gradient">
+
+<header>
+    <div th:replace="~{fragments/owner-nav :: ownerNav}"></div>
+</header>
+
+<main>
+    <h2 style="text-align:center; margin: 20px 0;">Salon Calendar</h2>
+    <div id="calendar"></div>
+</main>
+
+<!-- Correct FullCalendar Script (Global Namespace Version) -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    console.log("Calendar script loaded"); 
+
+    const calendarEl = document.getElementById('calendar');
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: '/calendar/events',
+        height: 'auto',
+
+        eventClick: function(info) {
+            window.location.href = "/appointments/view/" + info.event.id;
+        },
+
+        dateClick: function(info) {
+            if (confirm("Create an appointment here?")) {
+                window.location.href = "/appointments/create?date=" + info.dateStr;
+            }
+        }
+    });
+
+    calendar.render();
+});
+</script>
+
+</body>
+</html>
