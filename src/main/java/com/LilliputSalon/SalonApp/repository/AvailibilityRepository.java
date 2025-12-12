@@ -1,10 +1,11 @@
 package com.LilliputSalon.SalonApp.repository;
 
-import com.LilliputSalon.SalonApp.domain.Availability;
-import org.springframework.data.jpa.repository.JpaRepository;
-
 import java.time.LocalDate;
 import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.LilliputSalon.SalonApp.domain.Availability;
 
 public interface AvailibilityRepository extends JpaRepository<Availability, Integer> {
 
@@ -13,7 +14,7 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Inte
     List<Availability> findByWorkDate(LocalDate workDate);
 
     Availability findByUser_IdAndWorkDate(Long userId, LocalDate workDate);
-    
+
     Availability findByAvailabilityIdAndUser_Id(Integer availabilityId, Long userId);
 
 }

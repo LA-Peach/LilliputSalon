@@ -80,7 +80,7 @@ public class MyDayController {
         model.addAttribute("displayDate", displayDate);
         model.addAttribute("isToday", isToday);
 
-        
+
         Map<Integer, String> customerNames = new HashMap<>();
 
         for (Appointment appt : apptsThisDay) {
@@ -93,10 +93,10 @@ public class MyDayController {
 
         model.addAttribute("customerNames", customerNames);
 
-        
+
         return "myDay";
     }
-    
+
     @PostMapping("/stylist/completeAppointment")
     public String completeAppointment(@RequestParam Integer appointmentId) {
 
@@ -107,7 +107,9 @@ public class MyDayController {
 
 
     private String buildDisplayName(Profile p, String fallback) {
-        if (p == null) return fallback;
+        if (p == null) {
+			return fallback;
+		}
 
         String first = p.getFirstName();
         String last = p.getLastName();
@@ -120,7 +122,7 @@ public class MyDayController {
         }
         return fallback;
     }
-    
-    
+
+
 
 }

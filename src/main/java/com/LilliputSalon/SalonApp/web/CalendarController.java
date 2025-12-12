@@ -1,25 +1,37 @@
 package com.LilliputSalon.SalonApp.web;
 
-import com.LilliputSalon.SalonApp.domain.Appointment;
-import com.LilliputSalon.SalonApp.domain.Availability;
-import com.LilliputSalon.SalonApp.domain.BusinessHours;
-import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
-import com.LilliputSalon.SalonApp.repository.ProfileRepository;
-import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.util.*;
+import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.Availability;
+import com.LilliputSalon.SalonApp.domain.BusinessHours;
+import com.LilliputSalon.SalonApp.domain.Profile;
+import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
+import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
+import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
+import com.LilliputSalon.SalonApp.repository.ProfileRepository;
+import com.LilliputSalon.SalonApp.repository.UserRepository;
+import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
+import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 
 @Controller
 @PreAuthorize("hasAnyRole('OWNER','STYLIST')")
@@ -27,18 +39,29 @@ public class CalendarController {
 
     private final AppointmentManagerService appointmentService;
     private final ProfileRepository profileRepo;
+    private final BusinessHoursRepository businessHoursRepo;
+    private final UserRepository userRepo;
+    private final UserTypeRepository userTypeRepo;
+
+
 
     public CalendarController(AppointmentManagerService appointmentService,
-                              ProfileRepository profileRepo) {
+                              ProfileRepository profileRepo,
+                              BusinessHoursRepository businessHoursRepo,
+                              UserRepository userRepo,
+                              UserTypeRepository userTypeRepo) {
         this.appointmentService = appointmentService;
         this.profileRepo = profileRepo;
+        this.businessHoursRepo = businessHoursRepo;
+        this.userRepo = userRepo;
+        this.userTypeRepo = userTypeRepo;
     }
 
     @GetMapping("/calendar")
     public String calendarPage() {
         return "calendar";  // MUST NOT start with "/"
     }
-    
+
     @ResponseBody
     @GetMapping(value = "/calendar/shifts", produces = "application/json")
     public List<Map<String, Object>> getShiftEvents() {
@@ -91,7 +114,7 @@ public class CalendarController {
 
 
             events.add(ev);
-            
+
             if (shift.getBreakTimes() != null) {
                 for (var br : shift.getBreakTimes()) {
 
@@ -111,7 +134,7 @@ public class CalendarController {
                     	    "type", "break"
                     	));
 
-                    
+
                     brEv.put("classNames", List.of("break"));
 
 
@@ -121,8 +144,8 @@ public class CalendarController {
 
 
         }
-        
-        
+
+
 
         return events;
     }
@@ -161,14 +184,14 @@ public class CalendarController {
             ev.put("end", end.toString());
 
             Profile stylist = profileCache.computeIfAbsent(
-                appt.getStylistId().longValue(),
-                id -> profileRepo.findById(id).orElse(null)
-            );
+            	    appt.getStylistId().longValue(),
+            	    id -> profileRepo.findByUser_Id(id).orElse(null)
+            	);
 
-            Profile customer = profileCache.computeIfAbsent(
-                appt.getCustomerId().longValue(),
-                id -> profileRepo.findById(id).orElse(null)
-            );
+            	Profile customer = profileCache.computeIfAbsent(
+            	    appt.getCustomerId().longValue(),
+            	    id -> profileRepo.findByUser_Id(id).orElse(null)
+            	);
 
             String stylistName = stylist != null ? stylist.getFirstName() : "Stylist";
             String customerName = customer != null ? customer.getFirstName() : "Client";
@@ -179,7 +202,7 @@ public class CalendarController {
             int colorIndex = Math.toIntExact(appt.getStylistId() % colorPalette.size());
             ev.put("backgroundColor", colorPalette.get(colorIndex));
             ev.put("borderColor", colorPalette.get(colorIndex));
-            
+
             ev.put("extendedProps", Map.of(
             	    "status", appt.getStatus()
             	));
@@ -190,7 +213,7 @@ public class CalendarController {
 
         return events;
     }
-    
+
     @PostMapping("/calendar/update")
     @ResponseBody
     public Map<String, Object> updateEvent(@RequestBody CalendarEventDTO dto) {
@@ -232,7 +255,7 @@ public class CalendarController {
             return result;
         }
     }
-    
+
     @PostMapping("/appointments/delete/{id}")
     @ResponseBody
     @PreAuthorize("hasAnyRole('OWNER','STYLIST')")
@@ -247,6 +270,89 @@ public class CalendarController {
         }
     }
 
+    @PostMapping("/appointments/create")
+    @ResponseBody
+    public Map<String, Object> createAppointment(@RequestBody CreateAppointmentDTO dto) {
+
+      Map<String, Object> result = new HashMap<>();
+
+      try {
+        // times
+        Instant startI = Instant.parse(dto.getStart());
+        Instant endI   = Instant.parse(dto.getEnd());
+        ZoneId zone = ZoneId.systemDefault();
+        LocalDateTime start = LocalDateTime.ofInstant(startI, zone);
+        LocalDateTime end   = LocalDateTime.ofInstant(endI, zone);
+
+        // ✅ resolve customerId by email (or create guest)
+        Long customerId = resolveOrCreateCustomer(dto);
+
+        // business hours (you’ll likely want to map based on day-of-week later)
+        BusinessHours bh = businessHoursRepo.findById(1)
+            .orElseThrow(() -> new RuntimeException("Business hours missing"));
+
+        Appointment appt = new Appointment();
+        appt.setCustomerId(customerId);              // ✅ FIX
+        appt.setStylistId(dto.getStylistId());
+        appt.setScheduledStartDateTime(start);
+        appt.setDurationMinutes((int) Duration.between(start, end).toMinutes());
+        appt.setBusinessHours(bh);
+        appt.setStatus("Scheduled");
+        appt.setIsCompleted(false);
+
+        appointmentService.save(appt);
+
+        result.put("status", "ok");
+        return result;
+
+      } catch (Exception e) {
+        e.printStackTrace();
+        result.put("status", "error");
+        result.put("message", e.getMessage());
+        return result;
+      }
+    }
+
+    private Long resolveOrCreateCustomer(CreateAppointmentDTO dto) {
+
+        String email = dto.getCustomerEmail();
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("Customer email is required.");
+        }
+
+        var matches = profileRepo.searchByEmail(email.trim());
+
+        if (!matches.isEmpty()) {
+            return matches.get(0).getUser().getId();
+        }
+
+
+        // create walk-in guest
+        User guestUser = new User();
+        guestUser.setEmail(email.trim());
+        guestUser.setIsActive(false);
+        guestUser.setPasswordHash("TEMP_GUEST");
+        userRepo.save(guestUser);
+
+        Profile guestProfile = new Profile();
+        guestProfile.setUser(guestUser);
+        guestProfile.setFirstName(
+            Optional.ofNullable(dto.getGuestFirstName()).filter(s -> !s.isBlank()).orElse("Walk-in")
+        );
+        guestProfile.setLastName(
+            Optional.ofNullable(dto.getGuestLastName()).orElse("")
+        );
+        guestProfile.setPhone(dto.getGuestPhone());
+        guestProfile.setIsActiveStylist(false);
+        guestProfile.setUserType(
+            userTypeRepo.findByTypeNameIgnoreCase("CUSTOMER")
+                .orElseThrow()
+        );
+
+        profileRepo.save(guestProfile);
+
+        return guestUser.getId();
+    }
 
 
 

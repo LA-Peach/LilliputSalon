@@ -1,7 +1,8 @@
 package com.LilliputSalon.SalonApp.repository;
 
-import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.LilliputSalon.SalonApp.domain.BusinessHours;
 
 public interface BusinessHoursRepository extends JpaRepository<BusinessHours, Integer> {
 

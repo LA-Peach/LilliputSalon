@@ -29,12 +29,28 @@
 
 <main>
     <h2 style="text-align:center; margin: 20px 0;">Salon Calendar</h2>
-    <div id="availabilityToggles"
-	     style="max-width:1100px;margin:10px auto;">
-	  <strong>Show availability:</strong>
+
+	<div style="
+	  max-width:1100px;
+	  margin:10px auto 12px;
+	  display:flex;
+	  align-items:center;
+	  justify-content:space-between;
+	  gap:12px;
+	">
+	  <!-- Left: availability toggles -->
+	  <div id="availabilityToggles">
+	    <strong>Show availability:</strong>
+	  </div>
+	
+	  <!-- Right: create button -->
+	  <button id="newApptBtn" class="btn-primary">
+	    + New Appointment
+	  </button>
 	</div>
-    
-    <div id="calendar"></div>
+	
+	<div id="calendar"></div>
+
 </main>
 
 <!-- FullCalendar Script -->
@@ -45,6 +61,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	
 	const csrfToken = document.querySelector('meta[name="_csrf"]').content;
 	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+	
+	
 
 	
 	let availabilityTogglesBuilt = false;
@@ -74,6 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
         droppable: true,
         eventResizableFromStart: true,
         eventDurationEditable: true,
+        
+
 
         eventSources: [
 
@@ -159,12 +179,42 @@ document.addEventListener('DOMContentLoaded', function () {
         	  deleteBtn.style.opacity = isCompleted ? '0.5' : '1';
 
         	  document.getElementById('appointmentModal').style.display = 'flex';
-        	}
-        
+        	},
+
         	
 
     });
     
+    const createModal = document.getElementById('createModal');
+
+    function openCreateModal() {
+    	  const now = new Date();
+
+    	  const startInput = document.getElementById('createStart');
+    	  const endInput   = document.getElementById('createEnd');
+
+    	  startInput.value = now.toISOString().slice(0, 16);
+
+    	  const end = new Date(now.getTime() + 60 * 60 * 1000);
+    	  endInput.value = end.toISOString().slice(0, 16);
+
+    	  createModal.style.display = 'flex';
+    	}
+
+
+    function closeCreateModal() {
+      createModal.style.display = 'none';
+      document.getElementById('createStart').value = '';
+      document.getElementById('createEnd').value = '';
+    }
+
+    createModal.addEventListener('click', e => {
+      if (e.target === createModal) closeCreateModal();
+    });
+
+    document.getElementById('createCancelBtn')
+      .addEventListener('click', closeCreateModal);
+
     
     
     let selectedEvent = null;
@@ -189,6 +239,27 @@ document.addEventListener('DOMContentLoaded', function () {
     	  document.getElementById('modalEnd').value = '';
 
     	});
+    
+    document.getElementById('newApptBtn')
+    .addEventListener('click', async () => {
+
+      await loadStylists();
+
+      createModal.style.display = 'flex';
+
+      setTimeout(() => {
+        const now = new Date();
+
+        document.getElementById('createStart').value =
+          now.toISOString().slice(0, 16);
+
+        const end = new Date(now.getTime() + 60 * 60 * 1000);
+        document.getElementById('createEnd').value =
+          end.toISOString().slice(0, 16);
+      }, 0);
+  });
+
+
 
 
     document.getElementById('deleteBtn').onclick = async () => {
@@ -213,8 +284,6 @@ document.addEventListener('DOMContentLoaded', function () {
     };
     
     document.getElementById('saveBtn').addEventListener('click', async () => {
-    	  if (!selectedEvent) return;
-
     	  const start = document.getElementById('modalStart').value;
     	  const end   = document.getElementById('modalEnd').value;
 
@@ -223,6 +292,9 @@ document.addEventListener('DOMContentLoaded', function () {
     	    return;
     	  }
 
+    	 
+
+    	  // ✏️ EDIT MODE (existing logic)
     	  const res = await fetch('/calendar/update', {
     	    method: 'POST',
     	    headers: {
@@ -245,6 +317,71 @@ document.addEventListener('DOMContentLoaded', function () {
     	  calendar.refetchEvents();
     	  closeModal();
     	});
+
+    async function loadStylists() {
+    	  const res = await fetch('/web/stylists');
+    	  const stylists = await res.json();
+
+    	  const select = document.getElementById('createStylist');
+    	  select.innerHTML = '<option value="">Select stylist</option>';
+
+    	  stylists.forEach(s => {
+    	    const opt = document.createElement('option');
+    	    opt.value = s.userId;              // ✅ FIX HERE
+    	    opt.textContent = s.firstName;
+    	    select.appendChild(opt);
+    	  });
+
+    	  return stylists;
+    	}
+
+    	
+    document.getElementById('createSaveBtn')
+    .addEventListener('click', async () => {
+
+      const stylistValue = document.getElementById('createStylist').value;
+      const stylistId = Number(stylistValue);
+
+      const start = document.getElementById('createStart').value;
+      const end   = document.getElementById('createEnd').value;
+
+      console.log({ stylistId, start, end });
+
+      if (Number.isNaN(stylistId) || !start || !end) {
+        alert('All fields required');
+        return;
+      }
+
+      const res = await fetch('/appointments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          [csrfHeader]: csrfToken
+        },
+        body: JSON.stringify({
+        	  stylistId,
+        	  start: new Date(start).toISOString(),
+        	  end: new Date(end).toISOString(),
+
+        	  customerEmail: document.getElementById('customerEmail').value,
+        	  guestFirstName: document.getElementById('guestFirstName').value,
+        	  guestLastName: document.getElementById('guestLastName').value,
+        	  guestPhone: document.getElementById('guestPhone').value
+        	})
+
+      });
+
+      const data = await res.json();
+
+      if (data.status !== 'ok') {
+        alert(data.message || 'Create failed');
+        return;
+      }
+
+      calendar.refetchEvents();
+      closeCreateModal();
+  });
+
 
     
     function buildAvailabilityToggles(events) {
@@ -319,17 +456,99 @@ document.addEventListener('DOMContentLoaded', function () {
     	    info.revert();
     	  });
     	}
+    
+    function openEditModal(dateStr) {
+    	  selectedEvent = null;
+    	  isCreateMode = true;
+
+    	  const modal = document.getElementById('appointmentModal');
+    	  const startInput = document.getElementById('modalStart');
+    	  const endInput   = document.getElementById('modalEnd');
+
+    	  // Prefill start time
+    	  startInput.value = dateStr.slice(0, 16);
+
+    	  // Optional: default duration (1 hour)
+    	  const startDate = new Date(dateStr);
+    	  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    	  endInput.value = endDate.toISOString().slice(0, 16);
+
+    	  document.getElementById('modalTitle').textContent = 'New Appointment';
+
+    	  // Enable inputs
+    	  startInput.disabled = false;
+    	  endInput.disabled   = false;
+    	  document.getElementById('saveBtn').disabled = false;
+    	  document.getElementById('deleteBtn').style.display = 'none';
+
+    	  modal.style.display = 'flex';
+    	}
+
 
    
     
     function closeModal() {
     	  document.getElementById('appointmentModal').style.display = 'none';
     	  selectedEvent = null;
+    	  isCreateMode = false;
+
     	  document.getElementById('modalStart').value = '';
     	  document.getElementById('modalEnd').value = '';
+
     	  
     	  calendar.refetchEvents();
     	}
+    
+    const emailInput = document.getElementById('customerEmail');
+    const resultsBox = document.getElementById('customerSearchResults');
+
+    let searchTimer = null;
+
+    emailInput.addEventListener('input', () => {
+      const q = emailInput.value.trim();
+
+      clearTimeout(searchTimer);
+
+      if (q.length < 2) {
+        resultsBox.style.display = 'none';
+        resultsBox.innerHTML = '';
+        return;
+      }
+
+      searchTimer = setTimeout(async () => {
+        const res = await fetch(`/customers/search?q=${encodeURIComponent(q)}`);
+        const customers = await res.json();
+
+        resultsBox.innerHTML = '';
+
+        if (customers.length === 0) {
+          resultsBox.style.display = 'none';
+          return;
+        }
+
+        customers.forEach(c => {
+          const div = document.createElement('div');
+          div.textContent = `${c.email} (${c.name})`;
+          div.style.padding = '8px 12px';
+          div.style.cursor = 'pointer';
+
+          div.addEventListener('click', () => {
+            emailInput.value = c.email;
+            resultsBox.style.display = 'none';
+
+            // clear walk-in fields since this is an existing customer
+            document.getElementById('guestFirstName').value = '';
+            document.getElementById('guestLastName').value = '';
+            document.getElementById('guestPhone').value = '';
+          });
+
+          resultsBox.appendChild(div);
+        });
+
+        resultsBox.style.display = 'block';
+      }, 250); // debounce
+    });
+
     
 
     
@@ -358,9 +577,81 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 
     <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-      <button id="saveBtn" class="btn-primary">Save</button>
-      <button id="deleteBtn" class="btn-danger">Delete</button>
-      <button id="closeBtn" class="btn-secondary">Close</button>
+      <button id="saveBtn" class="btn-primary" type="button">Save</button>
+      <button id="deleteBtn" class="btn-danger" type="button">Delete</button>
+      <button id="closeBtn" class="btn-secondary" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="createModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card glass-card">
+    <h3>New Appointment</h3>
+
+    <div class="field-group">
+      <label>Stylist</label>
+      <select id="createStylist">
+		  <option value="">Select stylist</option>
+		</select>
+
+    </div>
+    
+    <div class="field-group" style="position:relative;">
+	  <label>Customer Email</label>
+	  <input
+	    type="email"
+	    id="customerEmail"
+	    placeholder="Search or enter email"
+	    autocomplete="off"
+	  >
+	
+	  <div id="customerSearchResults"
+	       style="
+	         position:absolute;
+	         top:100%;
+	         left:0;
+	         right:0;
+	         background:white;
+	         border-radius:8px;
+	         box-shadow:0 8px 20px rgba(0,0,0,.15);
+	         z-index:1000;
+	         display:none;
+	         max-height:180px;
+	         overflow-y:auto;
+	       ">
+	  </div>
+	</div>
+
+	
+	<div class="field-group">
+	  <label>First Name (walk-in)</label>
+	  <input type="text" id="guestFirstName">
+	</div>
+	
+	<div class="field-group">
+	  <label>Last Name (walk-in)</label>
+	  <input type="text" id="guestLastName">
+	</div>
+	
+	<div class="field-group">
+	  <label>Phone</label>
+	  <input type="text" id="guestPhone">
+	</div>
+    
+
+    <div class="field-group">
+      <label>Start</label>
+      <input type="datetime-local" id="createStart">
+    </div>
+
+    <div class="field-group">
+      <label>End</label>
+      <input type="datetime-local" id="createEnd">
+    </div>
+
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+      <button id="createSaveBtn" class="btn-primary" type="button">Create</button>
+      <button id="createCancelBtn" class="btn-secondary" type="button">Cancel</button>
     </div>
   </div>
 </div>

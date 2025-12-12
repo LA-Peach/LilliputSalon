@@ -1,10 +1,11 @@
 package com.LilliputSalon.SalonApp.repository;
 
-import com.LilliputSalon.SalonApp.domain.BreakTime;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.LilliputSalon.SalonApp.domain.BreakTime;
 
 @Repository
 public interface BreakTimeRepository extends JpaRepository<BreakTime, Integer> {

@@ -30,7 +30,7 @@ public class Profile {
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "UserTypeID", nullable = false)
-    private UserType userType; 
+    private UserType userType;
 
     @Column(name = "FirstName", length = 100)
     private String firstName;

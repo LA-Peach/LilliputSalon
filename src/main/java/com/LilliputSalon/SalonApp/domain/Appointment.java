@@ -5,9 +5,12 @@ import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,13 +26,14 @@ public class Appointment {
     private Integer appointmentId;
 
     @Column(name = "CustomerID", nullable = false)
-    private Integer customerId;
+    private Long customerId;
 
     @Column(name = "StylistID", nullable = false)
     private Integer stylistId;
 
-    @Column(name = "BusinessHoursID", nullable = false)
-    private Integer businessHoursId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BusinessHoursID", nullable = false)
+    private BusinessHours businessHours;
 
     @Column(name = "ScheduledStartDateTime", nullable = false)
     private LocalDateTime scheduledStartDateTime;

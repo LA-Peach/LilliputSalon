@@ -1,5 +1,16 @@
 package com.LilliputSalon.SalonApp.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
@@ -7,14 +18,8 @@ import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.dto.ScheduleEventDTO;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.BreakTimeRepository;
-import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.*;
+import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 
 @Service
 public class ScheduleService {
@@ -74,24 +79,24 @@ public class ScheduleService {
     CALENDAR EVENTS (ALL STYLISTS — SALON OVERVIEW)
     -------------------------------------------- */
 	 public List<ScheduleEventDTO> getAllCalendarEvents() {
-	
+
 	     List<Availability> allAvailabilities = availabilityRepo.findAll();
 	     List<ScheduleEventDTO> events = new ArrayList<>();
-	
+
 	     for (Availability availability : allAvailabilities) {
-	
+
 	         // Shift (availability)
 	         events.add(toAvailabilityEvent(availability));
-	
+
 	         // Breaks inside that shift
 	         List<BreakTime> breaks =
 	                 breakRepo.findByAvailability_AvailabilityId(availability.getAvailabilityId());
-	
+
 	         for (BreakTime b : breaks) {
 	             events.add(toBreakEvent(availability, b));
 	         }
 	     }
-	
+
 	     return events;
 	 }
 

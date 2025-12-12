@@ -1,16 +1,19 @@
 package com.LilliputSalon.SalonApp.service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
+import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
@@ -112,7 +115,7 @@ public class AppointmentManagerService {
                 date.withHour(23).withMinute(59).withSecond(59)
         );
     }
-    
+
     public void markAppointmentComplete(Integer appointmentId) {
 
         Appointment appt = repo.findById(appointmentId)
@@ -131,11 +134,11 @@ public class AppointmentManagerService {
 
         repo.save(appt);
     }
-    
+
     public List<Appointment> getAllAppointments() {
         return repo.findAll();
     }
-    
+
     public String validateAppointmentMove(Appointment appt, LocalDateTime newStart, LocalDateTime newEnd) {
 
         int stylistId = appt.getStylistId();
@@ -166,10 +169,10 @@ public class AppointmentManagerService {
 	     // 3) Validate breaks (ONLY overlap blocks)
 	     // ------------------------
 	     for (BreakTime b : availability.getBreakTimes()) {
-	
+
 	         LocalTime breakStart = b.getBreakStartTime();
 	         LocalTime breakEnd   = b.getBreakEndTime();
-	
+
 	         if (start.isBefore(breakEnd) && end.isAfter(breakStart)) {
 	             return "Appointment overlaps stylist break time.";
 	         }
@@ -188,8 +191,9 @@ public class AppointmentManagerService {
         for (Appointment other : sameDay) {
 
             // Skip itself
-            if (other.getAppointmentId().equals(appt.getAppointmentId()))
-                continue;
+            if (other.getAppointmentId().equals(appt.getAppointmentId())) {
+				continue;
+			}
 
             LocalDateTime oStart = other.getScheduledStartDateTime();
             LocalDateTime oEnd = oStart.plusMinutes(other.getDurationMinutes());
@@ -224,6 +228,33 @@ public class AppointmentManagerService {
         ASrepo.deleteByAppointmentId(appointmentId);
         repo.deleteById(appointmentId);
     }
+
+    @Transactional
+    public void create(CalendarEventDTO dto) {
+
+        ZoneId zone = ZoneId.systemDefault();
+
+        LocalDateTime start = LocalDateTime.ofInstant(
+            Instant.parse(dto.getStart()), zone);
+
+        LocalDateTime end = LocalDateTime.ofInstant(
+            Instant.parse(dto.getEnd()), zone);
+
+        Appointment appt = new Appointment();
+        appt.setScheduledStartDateTime(start);
+        appt.setDurationMinutes(
+            (int) Duration.between(start, end).toMinutes()
+        );
+
+        // 🔑 stylist assignment
+        appt.setStylistId(dto.getStylistId());
+
+        appt.setStatus("Scheduled");
+        appt.setIsCompleted(false);
+
+        repo.save(appt);
+    }
+
 
 
 

@@ -126,9 +126,11 @@ public class HomeController {
 
         return "home";
     }
-    
+
     private String buildDisplayName(Profile p, String fallback) {
-        if (p == null) return fallback;
+        if (p == null) {
+			return fallback;
+		}
 
         String first = p.getFirstName();
         String last = p.getLastName();

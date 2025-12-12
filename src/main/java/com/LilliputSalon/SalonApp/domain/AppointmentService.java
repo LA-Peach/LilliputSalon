@@ -36,7 +36,7 @@ public class AppointmentService {
 
     @Column(name = "ActualDurationMinutes", nullable = false)
     private Integer actualDurationMinutes;
-    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ServiceID", insertable = false, updatable = false)
     private Service service;
