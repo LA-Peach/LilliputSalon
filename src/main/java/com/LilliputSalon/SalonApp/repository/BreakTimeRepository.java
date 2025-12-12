@@ -1,0 +1,17 @@
+package com.LilliputSalon.SalonApp.repository;
+
+import com.LilliputSalon.SalonApp.domain.BreakTime;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface BreakTimeRepository extends JpaRepository<BreakTime, Integer> {
+
+    // valid — find all breaks for one availability block
+    List<BreakTime> findByAvailability_AvailabilityId(Integer availabilityId);
+
+    List<BreakTime> findByAvailability_User_Id(Long userId);
+
+}

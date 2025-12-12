@@ -2,19 +2,30 @@ package com.LilliputSalon.SalonApp.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.Availability;
+import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
+import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 
 @Service
 public class AppointmentManagerService {
 
-    @Autowired
-    private AppointmentRepository repo;
+    private final AppointmentRepository repo;
+    private final AvailibilityRepository availabilityRepo;
+
+    public AppointmentManagerService(AppointmentRepository repo,
+                                     AvailibilityRepository availabilityRepo) {
+        this.repo = repo;
+        this.availabilityRepo = availabilityRepo;
+    }
+
 
     public Appointment getById(Integer id) {
         return repo.findById(id).orElse(null);
@@ -118,6 +129,74 @@ public class AppointmentManagerService {
     public List<Appointment> getAllAppointments() {
         return repo.findAll();
     }
+    
+    public String validateAppointmentMove(Appointment appt, LocalDateTime newStart, LocalDateTime newEnd) {
+
+        int stylistId = appt.getStylistId();
+        LocalDate date = newStart.toLocalDate();
+
+        // ------------------------
+        // 1) Load stylist availability for date
+        // ------------------------
+        Availability availability = availabilityRepo
+                .findByUser_IdAndWorkDate(Long.valueOf(stylistId), date);
+
+        if (availability == null || !availability.getIsAvailable()) {
+            return "Stylist is not available on this day.";
+        }
+
+        LocalTime start = newStart.toLocalTime();
+        LocalTime end = newEnd.toLocalTime();
+
+        // ------------------------
+        // 2) Validate within working hours
+        // ------------------------
+        if (start.isBefore(availability.getDayStartTime()) ||
+            end.isAfter(availability.getDayEndTime())) {
+            return "Appointment is outside stylist's working hours.";
+        }
+
+        // ------------------------
+        // 3) Validate breaks
+        // ------------------------
+        for (BreakTime b : availability.getBreakTimes()) {
+            if (!(end.isBefore(b.getBreakStartTime()) ||
+                  start.isAfter(b.getBreakEndTime()))) {
+
+                return "Appointment overlaps stylist break time (" +
+                        b.getBreakType() + ").";
+            }
+        }
+
+        // ------------------------
+        // 4) Check for overlapping appointments
+        // ------------------------
+        List<Appointment> sameDay = repo.findByStylistIdAndScheduledStartDateTimeBetween(
+                stylistId,
+                date.atStartOfDay(),
+                date.atTime(23, 59)
+        );
+
+        for (Appointment other : sameDay) {
+
+            // Skip itself
+            if (other.getAppointmentId().equals(appt.getAppointmentId()))
+                continue;
+
+            LocalDateTime oStart = other.getScheduledStartDateTime();
+            LocalDateTime oEnd = oStart.plusMinutes(other.getDurationMinutes());
+
+            boolean overlap =
+                    !(newEnd.isBefore(oStart) || newStart.isAfter(oEnd));
+
+            if (overlap) {
+                return "Appointment overlaps another appointment.";
+            }
+        }
+
+        return null; // VALID
+    }
+
 
 
     public Appointment save(Appointment a) {

@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+    
+    <title>Stylist Scheduling</title>
+
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+    <!-- NEW: FullCalendar CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+
+    <style>
+        main {
+            max-width: 1100px;
+            margin: 20px auto;
+            background: var(--glass-bg, rgba(255,255,255,0.8));
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow, 0 18px 45px rgba(0,0,0,0.25));
+        }
+
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .toolbar label {
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .field-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .field-row label {
+            font-weight: 600;
+        }
+
+        input[type="time"],
+        input[type="date"],
+        select {
+            padding: 6px 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+        }
+
+        input[disabled] {
+            background: #e5e7eb;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .btn-primary {
+            background: #2563eb;
+            color: #fff;
+        }
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #111827;
+        }
+        .btn-danger {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.8rem;
+        }
+
+        .muted {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+
+        table th, table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        table th {
+            background: #f3f4f6;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .error-banner {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .success-banner {
+            background: #dcfce7;
+            color: #166534;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            background: #eff6ff;
+            color: #1d4ed8;
+        }
+
+        /* Overview calendar */
+        #overviewCalendar {
+            margin-top: 10px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+
+<body class="page-gradient">
+
+<header>
+    <div th:replace="~{fragments/owner-nav :: ownerNav}"></div>
+</header>
+
+<main>
+    <h2 style="text-align:center; margin:10px 0 4px;">Stylist Scheduling</h2>
+    <p style="text-align:center; margin-bottom:18px;">
+        Manage daily shifts and breaks, and see a weekly overview of all stylists.
+    </p>
+
+    <div class="toolbar">
+        <div>
+            <label for="stylistSelect">Select Stylist:</label>
+            <select id="stylistSelect">
+                <option th:each="s : ${stylists}"
+                        th:value="${s.user.id}"
+                        th:text="${s.firstName + ' ' + s.lastName}">
+                </option>
+            </select>
+        </div>
+
+        <div>
+            <label for="dateSelect">Date:</label>
+            <input id="dateSelect" type="date">
+        </div>
+
+        <div class="muted" id="businessHoursInfo">
+            <!-- Filled by JS -->
+        </div>
+    </div>
+
+    <div id="messageArea"></div>
+
+    <!-- SHIFT CARD -->
+    <section class="card">
+        <h3>Shift for Selected Date</h3>
+
+        <p class="muted" id="shiftStatusText">
+            Loading...
+        </p>
+
+        <div class="field-row">
+            <label>
+                <input type="checkbox" id="workThisDayCheckbox">
+                Stylist works this day
+            </label>
+            <span class="pill" id="businessHoursPill" style="display:none;"></span>
+        </div>
+
+        <div class="field-row">
+            <label for="shiftStartTime">Shift start:</label>
+            <input type="time" id="shiftStartTime">
+            <label for="shiftEndTime">Shift end:</label>
+            <input type="time" id="shiftEndTime">
+        </div>
+
+        <div class="field-row">
+            <button type="button" id="btnSaveShift" class="btn btn-primary">
+                Save Shift
+            </button>
+            <button type="button" id="btnDeleteShift" class="btn btn-danger" style="display:none;">
+                Delete Shift
+            </button>
+        </div>
+    </section>
+
+    <!-- BREAKS CARD -->
+    <section class="card">
+        <h3>Breaks During This Shift</h3>
+        <p class="muted">
+            Breaks are only allowed inside the shift's time range.
+        </p>
+
+        <div id="breaksArea">
+            <div id="noShiftWarning" class="muted">
+                No shift exists for this date yet. Create and save a shift first to add breaks.
+            </div>
+
+            <div id="breaksContent" style="display:none;">
+
+                <h4 style="margin-bottom:6px;">Existing Breaks</h4>
+                <div id="noBreaksText" class="muted" style="display:none;">
+                    No breaks for this date.
+                </div>
+
+                <table id="breaksTable" style="display:none;">
+                    <thead>
+                        <tr>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th style="width:160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="breaksTableBody"></tbody>
+                </table>
+
+                <hr style="margin:14px 0;">
+
+                <h4 style="margin-bottom:6px;">Add New Break</h4>
+                <div class="field-row">
+                    <label for="newBreakStart">Start:</label>
+                    <input type="time" id="newBreakStart">
+                    <label for="newBreakEnd">End:</label>
+                    <input type="time" id="newBreakEnd">
+                    <button type="button" id="btnAddBreak" class="btn btn-secondary">
+                        Add Break
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 🆕 WEEKLY OVERVIEW CALENDAR -->
+    <section class="card">
+        <h3>Weekly Overview – All Stylists</h3>
+        <p class="muted">
+            See all stylists' shifts this week. Colors indicate different stylists.
+        </p>
+
+        <div id="overviewCalendar"></div>
+
+        <div class="legend" id="stylistLegend"></div>
+    </section>
+</main>
+
+<!-- FullCalendar script -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+
+<script>
+    /* -----------------------------
+       Globals
+    --------------------------------*/
+    let businessHoursGlobal = [];   // from /scheduleManagement/businessHours
+    let allEventsForStylist = [];   // all events for currently-selected stylist
+    let currentShiftEvent = null;   // availability event for selected date
+    let currentBreakEvents = [];    // break events for selected date
+
+    // NEW: Weekly overview calendar
+    let overviewCalendar = null;
+
+    // stylistId -> { name, color }
+    const stylistInfoMap = {};
+    const stylistColors = [
+        "#3b82f6", "#22c55e", "#f97316", "#ec4899",
+        "#8b5cf6", "#0ea5e9", "#facc15", "#14b8a6"
+    ];
+    let stylistColorIndex = 0;
+
+    /* -----------------------------
+       CSRF helper
+    --------------------------------*/
+    function getCsrf() {
+        return {
+            token: document.querySelector('meta[name="_csrf"]').content,
+            header: document.querySelector('meta[name="_csrf_header"]').content
+        };
+    }
+
+    /* -----------------------------
+       Messages
+    --------------------------------*/
+    function showMessage(text, type = "error") {
+        const msgArea = document.getElementById("messageArea");
+        msgArea.innerHTML = "";
+        if (!text) return;
+
+        const div = document.createElement("div");
+        div.className = type === "success" ? "success-banner" : "error-banner";
+        div.textContent = text;
+        msgArea.appendChild(div);
+
+        setTimeout(() => {
+            if (msgArea.contains(div)) msgArea.removeChild(div);
+        }, 5000);
+    }
+
+    function clearMessage() {
+        document.getElementById("messageArea").innerHTML = "";
+    }
+
+    /* -----------------------------
+       Time helpers
+    --------------------------------*/
+    function timeFromIso(iso) {
+        if (!iso || iso.length < 16) return "";
+        return iso.substring(11, 16);
+    }
+
+    function buildIso(dateStr, timeStr) {
+        return `${dateStr}T${timeStr}`;
+    }
+
+    function toDateObj(dateStr, timeStr) {
+        return new Date(`${dateStr}T${timeStr}:00`);
+    }
+
+    /* -----------------------------
+       Business hours helpers
+    --------------------------------*/
+    function isWithinBusinessHours(dateObj) {
+        const day = dateObj.getDay(); // 0-6
+        const time = dateObj.toTimeString().substring(0, 5); // "HH:MM"
+
+        for (let bh of businessHoursGlobal) {
+            if (bh.daysOfWeek.includes(day)) {
+                if (bh.startTime === "00:00" && bh.endTime === "00:00") {
+                    return false; // closed
+                }
+                return time >= bh.startTime && time <= bh.endTime;
+            }
+        }
+        return false;
+    }
+
+    function isRangeWithinBusinessHours(startObj, endObj) {
+        return isWithinBusinessHours(startObj) && isWithinBusinessHours(endObj);
+    }
+
+    function getBusinessHoursForDay(dateStr) {
+        const d = new Date(dateStr + "T00:00:00");
+        const day = d.getDay();
+        return businessHoursGlobal.find(bh => bh.daysOfWeek.includes(day)) || null;
+    }
+
+    function updateBusinessHoursDisplay(dateStr) {
+        const infoEl = document.getElementById("businessHoursInfo");
+        const pillEl = document.getElementById("businessHoursPill");
+
+        if (!dateStr || businessHoursGlobal.length === 0) {
+            infoEl.textContent = "";
+            pillEl.style.display = "none";
+            return;
+        }
+
+        const bh = getBusinessHoursForDay(dateStr);
+        if (!bh || (bh.startTime === "00:00" && bh.endTime === "00:00")) {
+            infoEl.textContent = "Business closed this day.";
+            pillEl.style.display = "none";
+            return;
+        }
+
+        infoEl.textContent = `Business hours: ${bh.startTime} – ${bh.endTime}`;
+        pillEl.textContent = `Open ${bh.startTime} – ${bh.endTime}`;
+        pillEl.style.display = "inline-block";
+    }
+
+    /* -----------------------------
+       Day state from events
+    --------------------------------*/
+    function getType(e) {
+        return e.type || e.extendedProps?.type;
+    }
+
+    function recomputeDayState(dateStr) {
+        currentShiftEvent = null;
+        currentBreakEvents = [];
+
+        if (!dateStr) return;
+
+        const todaysEvents = allEventsForStylist.filter(e =>
+            e.start && e.start.startsWith(dateStr)
+        );
+
+        todaysEvents.forEach(e => {
+            if (getType(e) === "availability" && !currentShiftEvent) {
+                currentShiftEvent = e;
+            }
+        });
+
+        currentBreakEvents = todaysEvents.filter(e => getType(e) === "break");
+    }
+
+
+
+    /* -----------------------------
+       Render Shift Section
+    --------------------------------*/
+    function renderShiftSection(dateStr) {
+        const checkbox = document.getElementById("workThisDayCheckbox");
+        const startInput = document.getElementById("shiftStartTime");
+        const endInput = document.getElementById("shiftEndTime");
+        const deleteBtn = document.getElementById("btnDeleteShift");
+        const statusText = document.getElementById("shiftStatusText");
+
+        if (!dateStr) {
+            checkbox.checked = false;
+            startInput.value = "";
+            endInput.value = "";
+            startInput.disabled = true;
+            endInput.disabled = true;
+            deleteBtn.style.display = "none";
+            statusText.textContent = "Select a date to configure the shift.";
+            return;
+        }
+
+        if (currentShiftEvent) {
+            checkbox.checked = true;
+            const startTime = timeFromIso(currentShiftEvent.start);
+            const endTime = timeFromIso(currentShiftEvent.end);
+            startInput.value = startTime;
+            endInput.value = endTime;
+            startInput.disabled = false;
+            endInput.disabled = false;
+            deleteBtn.style.display = "inline-block";
+            statusText.textContent = "A shift exists for this date. You can adjust its times or delete it.";
+        } else {
+            checkbox.checked = false;
+            startInput.value = "";
+            endInput.value = "";
+            startInput.disabled = true;
+            endInput.disabled = true;
+            deleteBtn.style.display = "none";
+            statusText.textContent = "No shift exists for this date. Check the box and set times to create one.";
+        }
+    }
+
+    /* -----------------------------
+       Render Breaks Section
+    --------------------------------*/
+    function renderBreaksSection(dateStr) {
+        const noShiftWarning = document.getElementById("noShiftWarning");
+        const breaksContent = document.getElementById("breaksContent");
+        const noBreaksText = document.getElementById("noBreaksText");
+        const breaksTable = document.getElementById("breaksTable");
+        const tbody = document.getElementById("breaksTableBody");
+
+        tbody.innerHTML = "";
+
+        if (!dateStr || !currentShiftEvent) {
+            noShiftWarning.style.display = "block";
+            breaksContent.style.display = "none";
+            return;
+        }
+
+        noShiftWarning.style.display = "none";
+        breaksContent.style.display = "block";
+
+        if (currentBreakEvents.length === 0) {
+            noBreaksText.style.display = "block";
+            breaksTable.style.display = "none";
+            return;
+        }
+
+        noBreaksText.style.display = "none";
+        breaksTable.style.display = "table";
+
+        currentBreakEvents
+            .slice()
+            .sort((a, b) => a.start.localeCompare(b.start))
+            .forEach(e => {
+                const tr = document.createElement("tr");
+                tr.dataset.breakId = e.id;
+
+                const tdStart = document.createElement("td");
+                const startInput = document.createElement("input");
+                startInput.type = "time";
+                startInput.value = timeFromIso(e.start);
+                startInput.className = "break-start-input";
+                tdStart.appendChild(startInput);
+
+                const tdEnd = document.createElement("td");
+                const endInput = document.createElement("input");
+                endInput.type = "time";
+                endInput.value = timeFromIso(e.end);
+                endInput.className = "break-end-input";
+                tdEnd.appendChild(endInput);
+
+                const tdActions = document.createElement("td");
+
+                const saveBtn = document.createElement("button");
+                saveBtn.type = "button";
+                saveBtn.className = "btn btn-secondary btn-sm";
+                saveBtn.textContent = "Save";
+                saveBtn.addEventListener("click", () => onSaveBreakRow(e.id));
+
+                const delBtn = document.createElement("button");
+                delBtn.type = "button";
+                delBtn.className = "btn btn-danger btn-sm";
+                delBtn.style.marginLeft = "6px";
+                delBtn.textContent = "Delete";
+                delBtn.addEventListener("click", () => onDeleteBreak(e.id));
+
+                tdActions.appendChild(saveBtn);
+                tdActions.appendChild(delBtn);
+
+                tr.appendChild(tdStart);
+                tr.appendChild(tdEnd);
+                tr.appendChild(tdActions);
+
+                tbody.appendChild(tr);
+            });
+    }
+
+    /* -----------------------------
+       Reload form UI
+    --------------------------------*/
+    function refreshUI() {
+        const dateInput = document.getElementById("dateSelect");
+        const dateStr = dateInput.value;
+        updateBusinessHoursDisplay(dateStr);
+        recomputeDayState(dateStr);
+        renderShiftSection(dateStr);
+        renderBreaksSection(dateStr);
+    }
+
+    /* -----------------------------
+       Work checkbox behavior
+    --------------------------------*/
+    function onToggleWorkThisDay(checked) {
+        const startInput = document.getElementById("shiftStartTime");
+        const endInput = document.getElementById("shiftEndTime");
+
+        if (!checked) {
+            startInput.disabled = true;
+            endInput.disabled = true;
+        } else {
+            startInput.disabled = false;
+            endInput.disabled = false;
+        }
+    }
+
+    /* -----------------------------
+       Shift handlers
+    --------------------------------*/
+    async function onSaveShift() {
+        clearMessage();
+
+        const stylistSelect = document.getElementById("stylistSelect");
+        const dateInput = document.getElementById("dateSelect");
+        const checkbox = document.getElementById("workThisDayCheckbox");
+        const startInput = document.getElementById("shiftStartTime");
+        const endInput = document.getElementById("shiftEndTime");
+
+        const stylistId = stylistSelect.value;
+        const dateStr = dateInput.value;
+
+        if (!stylistId) {
+            showMessage("Please select a stylist.");
+            return;
+        }
+        if (!dateStr) {
+            showMessage("Please select a date.");
+            return;
+        }
+
+        if (!checkbox.checked) {
+            if (currentShiftEvent) {
+                showMessage("To remove this shift, use the Delete Shift button.", "error");
+            } else {
+                showMessage("Nothing to save — no shift configured for this date.", "error");
+            }
+            return;
+        }
+
+        const startTime = startInput.value;
+        const endTime   = endInput.value;
+
+        if (!startTime || !endTime) {
+            showMessage("Please provide shift start and end times.");
+            return;
+        }
+
+        if (endTime <= startTime) {
+            showMessage("Shift end time must be after start time.");
+            return;
+        }
+
+        const startDateObj = toDateObj(dateStr, startTime);
+        const endDateObj   = toDateObj(dateStr, endTime);
+
+        if (!isRangeWithinBusinessHours(startDateObj, endDateObj)) {
+            showMessage("Shift must be within business hours.", "error");
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            const res = await fetch("/scheduleManagement/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({
+                    type: "availability",
+                    start: buildIso(dateStr, startTime),
+                    end:   buildIso(dateStr, endTime),
+                    stylistId: stylistId
+                })
+            });
+
+            const data = await res.json();
+            if (data.status !== "ok") {
+                showMessage(data.message || "Error saving shift.");
+                return;
+            }
+
+            showMessage("Shift saved.", "success");
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+            if (overviewCalendar) {
+                overviewCalendar.refetchEvents();
+            }
+
+        } catch (err) {
+            showMessage("Network error while saving shift: " + err);
+        }
+    }
+
+    async function onDeleteShift() {
+        clearMessage();
+
+        if (!currentShiftEvent) {
+            showMessage("No shift exists to delete.");
+            return;
+        }
+
+        if (!confirm("Delete this shift and all of its breaks?")) {
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            const res = await fetch("/scheduleManagement/delete/" + currentShiftEvent.id, {
+                method: "DELETE",
+                headers: {
+                    [csrf.header]: csrf.token
+                }
+            });
+            const data = await res.json();
+            if (data.status !== "ok") {
+                showMessage(data.message || "Error deleting shift.");
+                return;
+            }
+
+            showMessage("Shift deleted.", "success");
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+            if (overviewCalendar) {
+                overviewCalendar.refetchEvents();
+            }
+
+        } catch (err) {
+            showMessage("Network error while deleting shift: " + err);
+        }
+    }
+
+    /* -----------------------------
+       Break handlers
+    --------------------------------*/
+    async function onAddBreak() {
+        clearMessage();
+
+        const stylistSelect = document.getElementById("stylistSelect");
+        const dateInput = document.getElementById("dateSelect");
+        const newStartInput = document.getElementById("newBreakStart");
+        const newEndInput   = document.getElementById("newBreakEnd");
+
+        const stylistId = stylistSelect.value;
+        const dateStr = dateInput.value;
+
+        if (!stylistId || !dateStr) {
+            showMessage("Select a stylist and date first.");
+            return;
+        }
+
+        if (!currentShiftEvent) {
+            showMessage("Create and save a shift for this date before adding breaks.");
+            return;
+        }
+
+        const startTime = newStartInput.value;
+        const endTime   = newEndInput.value;
+
+        if (!startTime || !endTime) {
+            showMessage("Provide break start and end times.");
+            return;
+        }
+
+        if (endTime <= startTime) {
+            showMessage("Break end time must be after start time.");
+            return;
+        }
+
+        const shiftStart = timeFromIso(currentShiftEvent.start);
+        const shiftEnd   = timeFromIso(currentShiftEvent.end);
+        if (startTime < shiftStart || endTime > shiftEnd) {
+            showMessage("Break must be within the shift hours.", "error");
+            return;
+        }
+
+        const dateStrLocal = dateStr;
+        const newStartIso = buildIso(dateStrLocal, startTime);
+        const newEndIso   = buildIso(dateStrLocal, endTime);
+
+        const overlaps = currentBreakEvents.some(b => {
+            const bStart = b.start;
+            const bEnd   = b.end;
+            return !(newEndIso <= bStart || newStartIso >= bEnd);
+        });
+
+        if (overlaps) {
+            showMessage("Break overlaps an existing break.", "error");
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            const res = await fetch("/scheduleManagement/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({
+                    type: "break",
+                    start: newStartIso,
+                    end:   newEndIso,
+                    stylistId: stylistId
+                })
+            });
+
+            const data = await res.json();
+            if (data.status !== "ok") {
+                showMessage(data.message || "Error creating break.");
+                return;
+            }
+
+            showMessage("Break added.", "success");
+            newStartInput.value = "";
+            newEndInput.value = "";
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+
+        } catch (err) {
+            showMessage("Network error while adding break: " + err);
+        }
+    }
+
+    async function onSaveBreakRow(breakId) {
+        clearMessage();
+
+        const stylistSelect = document.getElementById("stylistSelect");
+        const dateInput = document.getElementById("dateSelect");
+        const stylistId = stylistSelect.value;
+        const dateStr = dateInput.value;
+
+        if (!stylistId || !dateStr) {
+            showMessage("Select a stylist and date first.");
+            return;
+        }
+
+        const row = document.querySelector(`tr[data-break-id="${breakId}"]`);
+        if (!row) {
+            showMessage("Break row not found in DOM.");
+            return;
+        }
+
+        const startInput = row.querySelector(".break-start-input");
+        const endInput   = row.querySelector(".break-end-input");
+
+        const startTime = startInput.value;
+        const endTime   = endInput.value;
+
+        if (!startTime || !endTime) {
+            showMessage("Provide both start and end times for the break.");
+            return;
+        }
+
+        if (endTime <= startTime) {
+            showMessage("Break end time must be after start time.");
+            return;
+        }
+
+        if (!currentShiftEvent) {
+            showMessage("No shift exists for this date. Breaks must belong to a shift.", "error");
+            return;
+        }
+
+        const shiftStart = timeFromIso(currentShiftEvent.start);
+        const shiftEnd   = timeFromIso(currentShiftEvent.end);
+        if (startTime < shiftStart || endTime > shiftEnd) {
+            showMessage("Break must stay within the shift hours.", "error");
+            return;
+        }
+
+        const updatedStartIso = buildIso(dateStr, startTime);
+        const updatedEndIso   = buildIso(dateStr, endTime);
+
+        const overlaps = currentBreakEvents.some(b => {
+            if (b.id === breakId) return false;
+            return !(updatedEndIso <= b.start || updatedStartIso >= b.end);
+        });
+
+        if (overlaps) {
+            showMessage("Break overlaps another break.", "error");
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            const res = await fetch("/scheduleManagement/update", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({
+                    id: breakId,
+                    stylistId: stylistId,
+                    start: updatedStartIso,
+                    end:   updatedEndIso
+                })
+            });
+
+            const data = await res.json();
+            if (data.status !== "ok") {
+                showMessage(data.message || "Error updating break.");
+                return;
+            }
+
+            showMessage("Break updated.", "success");
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+
+        } catch (err) {
+            showMessage("Network error while updating break: " + err);
+        }
+    }
+
+    async function onDeleteBreak(breakId) {
+        clearMessage();
+
+        if (!confirm("Delete this break?")) {
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            const res = await fetch("/scheduleManagement/delete/" + breakId, {
+                method: "DELETE",
+                headers: {
+                    [csrf.header]: csrf.token
+                }
+            });
+            const data = await res.json();
+            if (data.status !== "ok") {
+                showMessage(data.message || "Error deleting break.");
+                return;
+            }
+
+            showMessage("Break deleted.", "success");
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+
+        } catch (err) {
+            showMessage("Network error while deleting break: " + err);
+        }
+    }
+
+    /* -----------------------------
+       Data loading for per-stylist editor
+    --------------------------------*/
+    async function reloadEventsForCurrentStylist() {
+        const stylistSelect = document.getElementById("stylistSelect");
+        const stylistId = stylistSelect.value;
+        if (!stylistId) {
+            allEventsForStylist = [];
+            return;
+        }
+
+        const res = await fetch("/scheduleManagement/events?stylistId=" + stylistId);
+        allEventsForStylist = await res.json();
+    }
+
+    /* -----------------------------
+       NEW: Overview calendar helpers
+    --------------------------------*/
+    function ensureStylistColors() {
+        const select = document.getElementById("stylistSelect");
+        const legend = document.getElementById("stylistLegend");
+        legend.innerHTML = "";
+
+        stylistInfoMap.__dummy = undefined; // to ensure it's an object, not array (silly guard)
+
+        const seenIds = new Set();
+
+        Array.from(select.options).forEach(opt => {
+            if (!opt.value) return;
+            const id = opt.value;
+            if (seenIds.has(id)) return;
+            seenIds.add(id);
+
+            if (!stylistInfoMap[id]) {
+                const color = stylistColors[stylistColorIndex % stylistColors.length];
+                stylistColorIndex++;
+                stylistInfoMap[id] = {
+                    name: opt.textContent,
+                    color: color
+                };
+            }
+        });
+
+        // Build legend UI
+        seenIds.forEach(id => {
+            const info = stylistInfoMap[id];
+            if (!info) return;
+
+            const item = document.createElement("div");
+            item.className = "legend-item";
+
+            const colorBox = document.createElement("div");
+            colorBox.className = "legend-color";
+            colorBox.style.backgroundColor = info.color;
+
+            const label = document.createElement("span");
+            label.textContent = info.name;
+
+            item.appendChild(colorBox);
+            item.appendChild(label);
+            legend.appendChild(item);
+        });
+    }
+
+    function getColorForStylist(stylistId) {
+        const info = stylistInfoMap[stylistId];
+        return info ? info.color : "#9ca3af";
+    }
+
+    function initOverviewCalendar() {
+        const calendarEl = document.getElementById("overviewCalendar");
+        if (!calendarEl) return;
+
+        overviewCalendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: "timeGridWeek",
+            slotMinTime: "07:00:00",
+            slotMaxTime: "21:00:00",
+            height: 550,
+            allDaySlot: false,
+            selectable: false,
+            editable: false,
+            eventOverlap: true,
+
+            events: function(fetchInfo, successCallback, failureCallback) {
+                fetch("/scheduleManagement/allEvents")
+                    .then(r => r.json())
+                    .then(data => {
+                    	const mapped = data.map(e => ({
+                    	    id: e.id,
+                    	    title: "",
+                    	    start: e.start,
+                    	    end: e.end,
+                    	    type: e.extendedProps?.type,           // FIXED
+                    	    stylistId: e.extendedProps?.stylistId, // FIXED
+                    	    displayStart: timeFromIso(e.start),
+                    	    displayEnd: timeFromIso(e.end)
+                    	}));
+
+                    	successCallback(mapped.filter(ev => ev.type === "availability"));
+
+                    })
+                    .catch(failureCallback);
+            },
+
+            eventDidMount: function(info) {
+                const stylistId = info.event.extendedProps.stylistId;
+                const color = getColorForStylist(stylistId);
+
+                info.el.style.backgroundColor = color;
+                info.el.style.borderColor = color;
+                info.el.style.color = "#ffffff";
+
+                const name = stylistInfoMap[String(stylistId)]?.name || "Unknown";
+
+                const start = info.event.extendedProps.displayStart;
+                const end   = info.event.extendedProps.displayEnd;
+
+                info.el.querySelector(".fc-event-title").textContent =
+                    `${name} – ${start}–${end}`;
+            }
+
+        });
+
+        overviewCalendar.render();
+    }
+
+    /* -----------------------------
+       DOM Ready
+    --------------------------------*/
+    document.addEventListener("DOMContentLoaded", async () => {
+        const stylistSelect  = document.getElementById("stylistSelect");
+        const dateInput      = document.getElementById("dateSelect");
+        const workCheckbox   = document.getElementById("workThisDayCheckbox");
+        const btnSaveShift   = document.getElementById("btnSaveShift");
+        const btnDeleteShift = document.getElementById("btnDeleteShift");
+        const btnAddBreak    = document.getElementById("btnAddBreak");
+
+        // Build stylist color map and legend from <select>
+        ensureStylistColors();
+
+        // Default date = today
+        const today = new Date();
+        const pad = n => n.toString().padStart(2, "0");
+        const todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+        dateInput.value = todayStr;
+
+        // Load business hours
+        try {
+            const res = await fetch("/scheduleManagement/businessHours");
+            businessHoursGlobal = await res.json();
+        } catch (err) {
+            showMessage("Failed to load business hours: " + err);
+        }
+
+        // Per-stylist editor initial events
+        if (stylistSelect.value) {
+            await reloadEventsForCurrentStylist();
+        }
+
+        // Init overview calendar
+        initOverviewCalendar();
+
+        // Initial render for form sections
+        refreshUI();
+
+        /* Event listeners */
+        stylistSelect.addEventListener("change", async () => {
+            clearMessage();
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+        });
+
+        dateInput.addEventListener("change", () => {
+            clearMessage();
+            refreshUI();
+        });
+
+        workCheckbox.addEventListener("change", (e) => {
+            onToggleWorkThisDay(e.target.checked);
+        });
+
+        btnSaveShift.addEventListener("click", onSaveShift);
+        btnDeleteShift.addEventListener("click", onDeleteShift);
+        btnAddBreak.addEventListener("click", onAddBreak);
+    });
+</script>
+
+</body>
+</html>

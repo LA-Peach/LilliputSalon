@@ -1,15 +1,20 @@
 package com.LilliputSalon.SalonApp.web;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
+import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Controller
@@ -39,12 +44,12 @@ public class CalendarController {
 
         // List of distinct, soft colors
         List<String> colorPalette = List.of(
-            "#ff9999", // light red
-            "#ffcc99", // light orange
-            "#ffff99", // light yellow
-            "#ccffcc", // light green
-            "#99ccff", // light blue
-            "#cc99ff"  // light purple
+            "#FF7070", // light red
+            "#FFB870", // light orange
+            "#FFFF70", // light yellow
+            "#85FF85", // light green
+            "#70B8FF", // light blue
+            "#B870FF"  // light purple
         );
 
         List<Map<String, Object>> events = new ArrayList<>();
@@ -87,33 +92,49 @@ public class CalendarController {
         return events;
     }
     
-    @ResponseBody
     @PostMapping("/calendar/update")
-    public Map<String, String> updateEvent(@RequestBody Map<String, String> payload) {
+    @ResponseBody
+    public Map<String, Object> updateEvent(@RequestBody CalendarEventDTO dto) {
 
-        Integer id = Integer.valueOf(payload.get("id"));
+        Map<String, Object> result = new HashMap<>();
 
-        // Use OffsetDateTime to parse Zulu timestamps
-        OffsetDateTime odtStart = OffsetDateTime.parse(payload.get("start"));
-        OffsetDateTime odtEnd = payload.get("end") != null
-                ? OffsetDateTime.parse(payload.get("end"))
-                : null;
+        try {
+            // Parse FullCalendar UTC timestamps
+            Instant instantStart = Instant.parse(dto.getStart());
+            Instant instantEnd = dto.getEnd() != null ? Instant.parse(dto.getEnd()) : null;
 
-        LocalDateTime start = odtStart.toLocalDateTime();
-        LocalDateTime end = odtEnd != null ? odtEnd.toLocalDateTime() : null;
+            ZoneId zone = ZoneId.systemDefault();
 
-        Appointment appt = appointmentService.getById(id);
-        appt.setScheduledStartDateTime(start);
+            LocalDateTime start = LocalDateTime.ofInstant(instantStart, zone);
+            LocalDateTime end = instantEnd != null ? LocalDateTime.ofInstant(instantEnd, zone) : null;
 
-        if (end != null) {
-            int newDuration = (int) java.time.Duration.between(start, end).toMinutes();
-            appt.setDurationMinutes(newDuration);
+            Appointment appt = appointmentService.getById(dto.getId());
+
+            // Validate using your existing logic
+            String validationError = appointmentService.validateAppointmentMove(appt, start, end);
+            if (validationError != null) {
+                result.put("status", "error");
+                result.put("message", validationError);
+                return result;
+            }
+
+            // Save new times
+            appt.setScheduledStartDateTime(start);
+            appt.setDurationMinutes((int) java.time.Duration.between(start, end).toMinutes());
+            appointmentService.save(appt);
+
+            result.put("status", "ok");
+            return result;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            result.put("status", "error");
+            result.put("message", "Server error: " + ex.getMessage());
+            return result;
         }
-
-        appointmentService.save(appt);
-
-        return Map.of("status", "ok");
     }
+
+
 
 
 }

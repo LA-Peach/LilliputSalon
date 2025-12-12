@@ -6,9 +6,6 @@
     <title>Salon Calendar</title>
     <link rel="stylesheet" href="/css/lilliputSalon.css" />
 
-    <!-- FullCalendar Stylesheet Only -->
-    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/main.min.css" rel="stylesheet">
-
     <style>
         #calendar {
             max-width: 1100px;
@@ -32,7 +29,7 @@
     <div id="calendar"></div>
 </main>
 
-<!-- Correct FullCalendar Script (Global Namespace Version) -->
+<!-- FullCalendar Script -->
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
 
 <script>
@@ -43,6 +40,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
 
+        headerToolbar: {
+            left:   'prev,next today',
+            center: 'title',
+            right:  'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+
+        businessHours: [
+            { daysOfWeek: [1,2,3,4,5], startTime: '09:00', endTime: '19:00' },
+            { daysOfWeek: [6], startTime: '09:00', endTime: '17:00' }
+        ],
+
+        slotMinTime: '09:00:00',
+        slotMaxTime: '19:00:00',
+
         editable: true,
         droppable: true,
         eventResizableFromStart: true,
@@ -50,21 +61,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
         events: '/calendar/events',
 
-        eventDrop: function(info) {
+        /* 🔥 ADD THIS LINE — MAKES EVENT TEXT BLACK */
+        eventTextColor: 'black',
+
+        eventDrop(info) {
             updateEvent(info);
         },
-
-        eventResize: function(info) {
+        eventResize(info) {
             updateEvent(info);
         },
-
-        eventClick: function(info) {
+        eventClick(info) {
             window.location.href = "/appointments/view/" + info.event.id;
         }
     });
 
     function updateEvent(info) {
-
         fetch('/calendar/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,23 +85,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 end: info.event.end ? info.event.end.toISOString() : null
             })
         })
-        .then(response => {
-            if (!response.ok) {
-                alert("Failed to save changes");
-                info.revert(); // <-- NOW WORKS
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "ok") {
+                alert(data.message || "Move rejected");
+                info.revert();
             }
         })
         .catch(err => {
             console.error(err);
             alert("Server error");
-            info.revert(); // <-- NOW WORKS
+            info.revert();
         });
     }
 
     calendar.render();
 });
-
 </script>
+
 
 </body>
 </html>

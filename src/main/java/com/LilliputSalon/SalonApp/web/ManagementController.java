@@ -12,4 +12,5 @@ public class ManagementController {
     public String managementDashboard() {
         return "management";
     }
+   
 }

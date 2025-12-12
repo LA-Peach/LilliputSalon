@@ -10,5 +10,6 @@ import com.LilliputSalon.SalonApp.domain.Profile;
 public interface ProfileRepository extends JpaRepository<Profile, Long> {
     List<Profile> findByLastNameContainingIgnoreCase(String lastName);
     Optional<Profile> findByUser_Id(Long userId);
+    List<Profile> findByIsActiveStylistTrue();
 
 }
