@@ -43,6 +43,8 @@ public class CalendarController {
 
         List<Map<String, Object>> events = new ArrayList<>();
         List<Availability> shifts = appointmentService.getAllStylistShifts();
+        Map<Long, String> stylistNameCache = new HashMap<>();
+
 
         List<String> colorPalette = List.of(
             "#FF7070",
@@ -61,6 +63,14 @@ public class CalendarController {
             LocalDateTime end   = LocalDateTime.of(date, shift.getDayEndTime());
 
             Long stylistId = shift.getUser().getId();
+
+            String stylistName = stylistNameCache.computeIfAbsent(stylistId, id ->
+                profileRepo.findByUser_Id(id)
+                    .map(Profile::getFirstName)
+                    .orElse("Stylist")
+            );
+
+
             int colorIndex = (int) (stylistId % colorPalette.size());
             String color = colorPalette.get(colorIndex);
 
@@ -71,9 +81,46 @@ public class CalendarController {
             ev.put("display", "background");
             ev.put("backgroundColor", color);
             ev.put("borderColor", color);
+            ev.put("extendedProps", Map.of(
+            	    "stylistId", stylistId,
+            	    "stylistName", stylistName,
+            	    "type", "shift"
+            	));
+
 
             events.add(ev);
+            
+            if (shift.getBreakTimes() != null) {
+                for (var br : shift.getBreakTimes()) {
+
+                    LocalDateTime bStart =
+                        LocalDateTime.of(date, br.getBreakStartTime());
+                    LocalDateTime bEnd =
+                        LocalDateTime.of(date, br.getBreakEndTime());
+
+                    Map<String, Object> brEv = new HashMap<>();
+                    brEv.put("id", "break-" + br.getBreakId());
+                    brEv.put("start", bStart.toString());
+                    brEv.put("end", bEnd.toString());
+                    brEv.put("display", "background");
+                    brEv.put("extendedProps", Map.of(
+                    	    "stylistId", stylistId,
+                    	    "stylistName", stylistName,
+                    	    "type", "break"
+                    	));
+
+                    
+                    brEv.put("classNames", List.of("break"));
+
+
+                    events.add(brEv);
+                }
+            }
+
+
         }
+        
+        
 
         return events;
     }

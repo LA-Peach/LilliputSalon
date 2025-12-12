@@ -26,6 +26,11 @@
 
 <main>
     <h2 style="text-align:center; margin: 20px 0;">Salon Calendar</h2>
+    <div id="availabilityToggles"
+	     style="max-width:1100px;margin:10px auto;">
+	  <strong>Show availability:</strong>
+	</div>
+    
     <div id="calendar"></div>
 </main>
 
@@ -34,6 +39,10 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+	
+	let availabilityTogglesBuilt = false;
+	
+	const stylistVisibility = {};
 
     const calendarEl = document.getElementById('calendar');
 
@@ -68,16 +77,33 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Shifts (availability)
             {
-                url: '/calendar/shifts',
-                display: 'background',   // makes them appear as availability blocks
-                editable: false,         // cannot drag shifts
-                
-            }
+            	  url: '/calendar/shifts',
+            	  editable: false,
+            	  success(events) {
+            	    if (!availabilityTogglesBuilt) {
+            	      buildAvailabilityToggles(events);
+            	      availabilityTogglesBuilt = true;
+            	    }
+            	  }
+            	}
+
+
+
         ],
+        
+        eventDidMount(info) {
+            const props = info.event.extendedProps;
 
+            // reset in case FC reuses DOM nodes
+            info.el.style.display = '';
 
+            if (props?.type === 'shift' || props?.type === 'break') {
+              if (stylistVisibility[props.stylistId] === false) {
+                info.el.style.display = 'none';
+              }
+            }
+          },
 
-        /* 🔥 ADD THIS LINE — MAKES EVENT TEXT BLACK */
         eventTextColor: 'black',
 
         eventDrop(info) {
@@ -90,6 +116,50 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = "/appointments/view/" + info.event.id;
         }
     });
+    
+    function buildAvailabilityToggles(events) {
+    	  const container = document.getElementById('availabilityToggles');
+    	  container.innerHTML = '<strong>Show availability:</strong>';
+
+    	  const seen = new Set();
+
+    	  // 🔑 FIRST PASS: initialize visibility
+    	  events.forEach(e => {
+    	    const sid = e.extendedProps?.stylistId;
+    	    if (!sid) return;
+
+    	    if (stylistVisibility[sid] === undefined) {
+    	      stylistVisibility[sid] = false; // default = hidden
+    	    }
+    	  });
+
+    	  // 🔑 SECOND PASS: build checkboxes
+    	  events.forEach(e => {
+    	    const props = e.extendedProps;
+    	    const sid = props?.stylistId;
+    	    if (!sid || seen.has(sid)) return;
+
+    	    seen.add(sid);
+
+    	    const label = document.createElement('label');
+    	    label.style.marginRight = '12px';
+
+    	    const cb = document.createElement('input');
+    	    cb.type = 'checkbox';
+    	    cb.checked = false; // 🔥 force unchecked on load
+
+    	    cb.addEventListener('change', () => {
+    	      stylistVisibility[sid] = cb.checked;
+    	      calendar.refetchEvents();
+    	    });
+
+    	    label.appendChild(cb);
+    	    label.append(` ${props.stylistName}`);
+    	    container.appendChild(label);
+    	  });
+    	}
+
+
 
     function updateEvent(info) {
         fetch('/calendar/update', {
@@ -114,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function () {
             info.revert();
         });
     }
+
 
     calendar.render();
 });
