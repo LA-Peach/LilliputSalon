@@ -156,17 +156,19 @@ public class AppointmentManagerService {
             return "Appointment is outside stylist's working hours.";
         }
 
-        // ------------------------
-        // 3) Validate breaks
-        // ------------------------
-        for (BreakTime b : availability.getBreakTimes()) {
-            if (!(end.isBefore(b.getBreakStartTime()) ||
-                  start.isAfter(b.getBreakEndTime()))) {
+	     // ------------------------
+	     // 3) Validate breaks (ONLY overlap blocks)
+	     // ------------------------
+	     for (BreakTime b : availability.getBreakTimes()) {
+	
+	         LocalTime breakStart = b.getBreakStartTime();
+	         LocalTime breakEnd   = b.getBreakEndTime();
+	
+	         if (start.isBefore(breakEnd) && end.isAfter(breakStart)) {
+	             return "Appointment overlaps stylist break time.";
+	         }
+	     }
 
-                return "Appointment overlaps stylist break time (" +
-                        b.getBreakType() + ").";
-            }
-        }
 
         // ------------------------
         // 4) Check for overlapping appointments
@@ -206,4 +208,9 @@ public class AppointmentManagerService {
     public void delete(Integer id) {
         repo.deleteById(id);
     }
+
+
+	public List<Availability> getAllStylistShifts() {
+		return availabilityRepo.findAll();
+	}
 }

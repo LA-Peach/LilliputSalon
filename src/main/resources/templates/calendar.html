@@ -59,7 +59,23 @@ document.addEventListener('DOMContentLoaded', function () {
         eventResizableFromStart: true,
         eventDurationEditable: true,
 
-        events: '/calendar/events',
+        eventSources: [
+
+            // Appointments (already color-coded by backend)
+            {
+                url: '/calendar/events'
+            },
+
+            // Shifts (availability)
+            {
+                url: '/calendar/shifts',
+                display: 'background',   // makes them appear as availability blocks
+                editable: false,         // cannot drag shifts
+                
+            }
+        ],
+
+
 
         /* 🔥 ADD THIS LINE — MAKES EVENT TEXT BLACK */
         eventTextColor: 'black',

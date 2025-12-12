@@ -1,6 +1,7 @@
 package com.LilliputSalon.SalonApp.web;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -34,6 +36,49 @@ public class CalendarController {
     public String calendarPage() {
         return "calendar";  // MUST NOT start with "/"
     }
+    
+    @ResponseBody
+    @GetMapping(value = "/calendar/shifts", produces = "application/json")
+    public List<Map<String, Object>> getShiftEvents() {
+
+        List<Map<String, Object>> events = new ArrayList<>();
+        List<Availability> shifts = appointmentService.getAllStylistShifts();
+
+        List<String> colorPalette = List.of(
+            "#FF7070",
+            "#FFB870",
+            "#FFFF70",
+            "#85FF85",
+            "#70B8FF",
+            "#B870FF"
+        );
+
+        for (Availability shift : shifts) {
+
+            LocalDate date = shift.getWorkDate();
+
+            LocalDateTime start = LocalDateTime.of(date, shift.getDayStartTime());
+            LocalDateTime end   = LocalDateTime.of(date, shift.getDayEndTime());
+
+            Long stylistId = shift.getUser().getId();
+            int colorIndex = (int) (stylistId % colorPalette.size());
+            String color = colorPalette.get(colorIndex);
+
+            Map<String, Object> ev = new HashMap<>();
+            ev.put("id", "shift-" + shift.getAvailabilityId());
+            ev.put("start", start.toString());
+            ev.put("end", end.toString());
+            ev.put("display", "background");
+            ev.put("backgroundColor", color);
+            ev.put("borderColor", color);
+
+            events.add(ev);
+        }
+
+        return events;
+    }
+
+
 
     @ResponseBody
     @GetMapping(value = "/calendar/events", produces = "application/json")
