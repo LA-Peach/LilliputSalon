@@ -3,7 +3,9 @@ package com.LilliputSalon.SalonApp.repository;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.LilliputSalon.SalonApp.domain.AppointmentService;
 
@@ -18,5 +20,11 @@ public interface AppointmentServiceRepository extends JpaRepository<AppointmentS
     	    WHERE aps.appointmentId = :appointmentId
     	""")
     	List<AppointmentService> findWithServiceByAppointmentId(Integer appointmentId);
+    
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM AppointmentService aps WHERE aps.appointmentId = :id")
+    void deleteByAppointmentId(@Param("id") Integer id);
+
+
 
 }

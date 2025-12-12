@@ -7,6 +7,8 @@ import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -177,6 +179,11 @@ public class CalendarController {
             int colorIndex = Math.toIntExact(appt.getStylistId() % colorPalette.size());
             ev.put("backgroundColor", colorPalette.get(colorIndex));
             ev.put("borderColor", colorPalette.get(colorIndex));
+            
+            ev.put("extendedProps", Map.of(
+            	    "status", appt.getStatus()
+            	));
+
 
             events.add(ev);
         }
@@ -225,6 +232,21 @@ public class CalendarController {
             return result;
         }
     }
+    
+    @PostMapping("/appointments/delete/{id}")
+    @ResponseBody
+    @PreAuthorize("hasAnyRole('OWNER','STYLIST')")
+    public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {
+        try {
+            appointmentService.delete(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(500)
+                .body("Unable to delete appointment");
+        }
+    }
+
 
 
 

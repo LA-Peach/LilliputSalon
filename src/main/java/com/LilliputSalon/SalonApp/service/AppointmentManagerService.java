@@ -12,18 +12,24 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
+import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class AppointmentManagerService {
 
     private final AppointmentRepository repo;
     private final AvailibilityRepository availabilityRepo;
+    private final AppointmentServiceRepository ASrepo;
 
     public AppointmentManagerService(AppointmentRepository repo,
-                                     AvailibilityRepository availabilityRepo) {
+                                     AvailibilityRepository availabilityRepo,
+                                     AppointmentServiceRepository ASrepo) {
         this.repo = repo;
         this.availabilityRepo = availabilityRepo;
+        this.ASrepo = ASrepo;
     }
 
 
@@ -205,9 +211,21 @@ public class AppointmentManagerService {
         return repo.save(a);
     }
 
-    public void delete(Integer id) {
-        repo.deleteById(id);
+    @Transactional
+    public void delete(Integer appointmentId) {
+
+        Appointment appt = repo.findById(appointmentId)
+            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (appt.getIsCompleted()) {
+            throw new IllegalStateException("Completed appointments cannot be deleted");
+        }
+
+        ASrepo.deleteByAppointmentId(appointmentId);
+        repo.deleteById(appointmentId);
     }
+
+
 
 
 	public List<Availability> getAllStylistShifts() {
