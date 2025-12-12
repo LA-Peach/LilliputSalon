@@ -191,25 +191,28 @@
     </p>
 
     <div class="toolbar">
-        <div>
-            <label for="stylistSelect">Select Stylist:</label>
-            <select id="stylistSelect">
-                <option th:each="s : ${stylists}"
-                        th:value="${s.user.id}"
-                        th:text="${s.firstName + ' ' + s.lastName}">
-                </option>
-            </select>
-        </div>
-
-        <div>
-            <label for="dateSelect">Date:</label>
-            <input id="dateSelect" type="date">
-        </div>
-
-        <div class="muted" id="businessHoursInfo">
-            <!-- Filled by JS -->
-        </div>
+    <div>
+        <label for="stylistSelect">Select Stylist:</label>
+        <select id="stylistSelect">
+            <option th:each="s : ${stylists}"
+                    th:value="${s.user.id}"
+                    th:text="${s.firstName + ' ' + s.lastName}">
+            </option>
+        </select>
     </div>
+
+    <div>
+        <label for="dateSelect">Date:</label>
+        <input id="dateSelect" type="date">
+    </div>
+
+    <button id="copyToNextWeekBtn" class="btn btn-secondary" style="display:none;">
+        Copy Week Day → Next Week Day
+    </button>
+
+</div>
+
+
 
     <div id="messageArea"></div>
 
@@ -405,26 +408,18 @@
     }
 
     function updateBusinessHoursDisplay(dateStr) {
-        const infoEl = document.getElementById("businessHoursInfo");
-        const pillEl = document.getElementById("businessHoursPill");
+        const dayBtn = document.getElementById("copyToNextWeekBtn");
 
-        if (!dateStr || businessHoursGlobal.length === 0) {
-            infoEl.textContent = "";
-            pillEl.style.display = "none";
+        if (!dateStr) {
+            dayBtn.style.display = "none";
             return;
         }
 
-        const bh = getBusinessHoursForDay(dateStr);
-        if (!bh || (bh.startTime === "00:00" && bh.endTime === "00:00")) {
-            infoEl.textContent = "Business closed this day.";
-            pillEl.style.display = "none";
-            return;
-        }
-
-        infoEl.textContent = `Business hours: ${bh.startTime} – ${bh.endTime}`;
-        pillEl.textContent = `Open ${bh.startTime} – ${bh.endTime}`;
-        pillEl.style.display = "inline-block";
+        dayBtn.style.display = "inline-block";
     }
+
+
+
 
     /* -----------------------------
        Day state from events
@@ -816,6 +811,8 @@
             newEndInput.value = "";
             await reloadEventsForCurrentStylist();
             refreshUI();
+            overviewCalendar?.refetchEvents();
+
 
         } catch (err) {
             showMessage("Network error while adding break: " + err);
@@ -908,6 +905,8 @@
             showMessage("Break updated.", "success");
             await reloadEventsForCurrentStylist();
             refreshUI();
+            overviewCalendar?.refetchEvents();
+
 
         } catch (err) {
             showMessage("Network error while updating break: " + err);
@@ -939,6 +938,8 @@
             showMessage("Break deleted.", "success");
             await reloadEventsForCurrentStylist();
             refreshUI();
+            overviewCalendar?.refetchEvents();
+
 
         } catch (err) {
             showMessage("Network error while deleting break: " + err);
@@ -1013,10 +1014,47 @@
         const info = stylistInfoMap[stylistId];
         return info ? info.color : "#9ca3af";
     }
+    
+    function buildNonBusinessBackgroundEvents(businessHours) {
+        const bgEvents = [];
+
+        // businessHours: [{ daysOfWeek: [1], startTime: "09:00", endTime: "17:00"}, ...]
+
+        for (const bh of businessHours) {
+            bh.daysOfWeek.forEach(dow => {
+                // Before business opens
+                if (bh.startTime !== "00:00") {
+                    bgEvents.push({
+                        startTime: "00:00",
+                        endTime: bh.startTime,
+                        daysOfWeek: [dow],
+                        display: "background",
+                        color: "#e5e7eb" // grey
+                    });
+                }
+                // After business closes
+                if (bh.endTime !== "24:00") {
+                    bgEvents.push({
+                        startTime: bh.endTime,
+                        endTime: "24:00",
+                        daysOfWeek: [dow],
+                        display: "background",
+                        color: "#e5e7eb" // grey
+                    });
+                }
+            });
+        }
+
+        return bgEvents;
+    }
+
 
     function initOverviewCalendar() {
         const calendarEl = document.getElementById("overviewCalendar");
         if (!calendarEl) return;
+
+        // Build grey blocked hours
+        const nonBusinessBackground = buildNonBusinessBackgroundEvents(businessHoursGlobal);
 
         overviewCalendar = new FullCalendar.Calendar(calendarEl, {
             initialView: "timeGridWeek",
@@ -1028,48 +1066,159 @@
             editable: false,
             eventOverlap: true,
 
+            businessHours: businessHoursGlobal,
+
             events: function(fetchInfo, successCallback, failureCallback) {
                 fetch("/scheduleManagement/allEvents")
                     .then(r => r.json())
                     .then(data => {
-                    	const mapped = data.map(e => ({
-                    	    id: e.id,
-                    	    title: "",
-                    	    start: e.start,
-                    	    end: e.end,
-                    	    type: e.extendedProps?.type,           // FIXED
-                    	    stylistId: e.extendedProps?.stylistId, // FIXED
-                    	    displayStart: timeFromIso(e.start),
-                    	    displayEnd: timeFromIso(e.end)
-                    	}));
+                        const mapped = data.map(e => ({
+                            id: e.id,
+                            title: "",
+                            start: e.start,
+                            end: e.end,
+                            type: e.extendedProps?.type,
+                            stylistId: e.extendedProps?.stylistId
+                        }));
 
-                    	successCallback(mapped.filter(ev => ev.type === "availability"));
+                        const shifts = mapped.filter(ev => ev.type === "availability" || ev.type === "break")
 
+
+                        // Return shifts and non-business grey background events
+                        successCallback([
+                            ...shifts,
+                            ...nonBusinessBackground
+                        ]);
                     })
                     .catch(failureCallback);
             },
 
             eventDidMount: function(info) {
-                const stylistId = info.event.extendedProps.stylistId;
-                const color = getColorForStylist(stylistId);
+                const type = info.event.extendedProps.type;
 
-                info.el.style.backgroundColor = color;
-                info.el.style.borderColor = color;
-                info.el.style.color = "#ffffff";
+                // Grey background events (already styled)
+                if (info.event.display === "background") return;
 
-                const name = stylistInfoMap[String(stylistId)]?.name || "Unknown";
+                if (type === "availability") {
+                    const stylistId = info.event.extendedProps.stylistId;
+                    const color = getColorForStylist(stylistId);
+                    info.el.style.backgroundColor = color;
+                    info.el.style.borderColor = color;
+                    info.el.style.color = "#ffffff";
+                }
 
-                const start = info.event.extendedProps.displayStart;
-                const end   = info.event.extendedProps.displayEnd;
-
-                info.el.querySelector(".fc-event-title").textContent =
-                    `${name} – ${start}–${end}`;
+                if (type === "break") {
+                    info.el.style.backgroundColor = "#6b7280"; // dark grey
+                    info.el.style.borderColor = "#6b7280";
+                    info.el.style.color = "white";
+                    info.el.querySelector(".fc-event-title").textContent = "Break";
+                }
             }
-
         });
+        
+        
 
         overviewCalendar.render();
     }
+    
+    async function copyToNextWeek() {
+        clearMessage();
+
+        const stylistId = document.getElementById("stylistSelect").value;
+        const dateStr = document.getElementById("dateSelect").value;
+
+        if (!stylistId || !dateStr) {
+            showMessage("Select a stylist and date first.");
+            return;
+        }
+
+        // Compute next week's date
+        // Parse the date parts manually to avoid UTC shift
+		const [year, month, day] = dateStr.split("-").map(Number);
+		
+		// Create a local date with no timezone issues
+		const d = new Date(year, month - 1, day);
+		
+		// Add 7 days
+		d.setDate(d.getDate() + 7);
+		
+		// Format back to YYYY-MM-DD
+		const pad = n => n.toString().padStart(2, "0");
+		const nextDateStr =
+		    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+
+        if (!currentShiftEvent) {
+            showMessage("No shift exists for this date to copy.");
+            return;
+        }
+
+        const csrf = getCsrf();
+
+        try {
+            //
+            // 1. Copy shift
+            //
+            const shiftStart = timeFromIso(currentShiftEvent.start);
+            const shiftEnd   = timeFromIso(currentShiftEvent.end);
+
+            const resShift = await fetch("/scheduleManagement/create", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    [csrf.header]: csrf.token
+                },
+                body: JSON.stringify({
+                    type: "availability",
+                    start: `${nextDateStr}T${shiftStart}`,
+                    end:   `${nextDateStr}T${shiftEnd}`,
+                    stylistId: stylistId
+                })
+            });
+
+            const shiftData = await resShift.json();
+            if (shiftData.status !== "ok") {
+                showMessage(shiftData.message || "Error copying shift.");
+                return;
+            }
+
+            //
+            // 2. Copy breaks
+            //
+            for (const br of currentBreakEvents) {
+                const bStart = timeFromIso(br.start);
+                const bEnd   = timeFromIso(br.end);
+
+                await fetch("/scheduleManagement/create", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        [csrf.header]: csrf.token
+                    },
+                    body: JSON.stringify({
+                        type: "break",
+                        start: `${nextDateStr}T${bStart}`,
+                        end:   `${nextDateStr}T${bEnd}`,
+                        stylistId: stylistId
+                    })
+                });
+            }
+
+            showMessage("Schedule copied to next week!", "success");
+
+            await reloadEventsForCurrentStylist();
+            refreshUI();
+            overviewCalendar?.refetchEvents();
+
+        } catch (err) {
+            showMessage("Error copying schedule: " + err, "error");
+        }
+    }
+    
+ 
+
+
+
 
     /* -----------------------------
        DOM Ready
@@ -1081,6 +1230,10 @@
         const btnSaveShift   = document.getElementById("btnSaveShift");
         const btnDeleteShift = document.getElementById("btnDeleteShift");
         const btnAddBreak    = document.getElementById("btnAddBreak");
+        const copyBtn = document.getElementById("copyToNextWeekBtn");
+        copyBtn.addEventListener("click", copyToNextWeek);
+      
+
 
         // Build stylist color map and legend from <select>
         ensureStylistColors();
