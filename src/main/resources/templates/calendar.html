@@ -65,6 +65,8 @@ document.addEventListener('DOMContentLoaded', function () {
 	const createStartInput = document.getElementById('createStart');
 	
 	let selectedServiceIds = [];
+	let selectedEditServiceIds = [];
+
 
 	
 	function toLocalDatetimeValue(date) {
@@ -161,40 +163,33 @@ document.addEventListener('DOMContentLoaded', function () {
             updateEvent(info);
         },
     
-        eventClick(info) {
+        eventClick: async function (info) {
         	  if (info.event.display === 'background') return;
 
         	  selectedEvent = info.event;
 
         	  const startInput = document.getElementById('modalStart');
         	  const endInput   = document.getElementById('modalEnd');
-        	  const saveBtn    = document.getElementById('saveBtn');
-        	  const deleteBtn  = document.getElementById('deleteBtn');
 
-        	  document.getElementById('modalTitle').textContent = info.event.title;
-        	  
+        	  startInput.value = toLocalDatetimeValue(info.event.start);
+
+        	  endInput.value = info.event.end
+        	    ? toLocalDatetimeValue(info.event.end)
+        	    : '';
 
 
-        	  // Fill inputs
-        	  startInput.value = info.event.startStr.slice(0, 16);
-				endInput.value   = info.event.endStr
-				  ? info.event.endStr.slice(0, 16)
-				  : '';
-				
+        	  // 🔥 LOAD SERVICES
+        	  const res = await fetch('/services/api');
+        	  const categories = await res.json();
 
-        	  const isCompleted = info.event.extendedProps?.status === 'Completed';
+        	  const preselected =
+        	    info.event.extendedProps?.serviceIds || [];
 
-        	  // 🔒 SAFETY RULES
-        	  startInput.disabled = isCompleted;
-        	  endInput.disabled   = isCompleted;
-        	  saveBtn.disabled    = isCompleted;
-        	  deleteBtn.disabled  = isCompleted;
-
-        	  saveBtn.style.opacity   = isCompleted ? '0.5' : '1';
-        	  deleteBtn.style.opacity = isCompleted ? '0.5' : '1';
+        	  renderServicesForEdit(categories, preselected);
 
         	  document.getElementById('appointmentModal').style.display = 'flex';
         	},
+
 
         	
 
@@ -313,10 +308,11 @@ document.addEventListener('DOMContentLoaded', function () {
     	      [csrfHeader]: csrfToken
     	    },
     	    body: JSON.stringify({
-    	      id: selectedEvent.id,
-    	      start: new Date(start).toISOString(),
-    	      end: new Date(end).toISOString()
-    	    })
+    	    	  id: selectedEvent.id,
+    	    	  start: new Date(start).toISOString(),
+    	    	  serviceIds: selectedEditServiceIds
+    	    	})
+
     	  });
 
     	  const data = await res.json();
@@ -453,8 +449,8 @@ document.addEventListener('DOMContentLoaded', function () {
     	    },
     	    body: JSON.stringify({
     	      id: info.event.id,
-    	      start: info.event.start.toISOString(),
-    	      end: info.event.end ? info.event.end.toISOString() : null
+    	      start: info.event.start.toISOString()
+    	      // ❌ DO NOT SEND end
     	    })
     	  })
     	  .then(res => res.json())
@@ -463,15 +459,15 @@ document.addEventListener('DOMContentLoaded', function () {
     	      alert(data.message || "Move rejected");
     	      info.revert();
     	    } else {
-    	      calendar.refetchEvents(); // ✅ sync frontend + backend
+    	      calendar.refetchEvents();
     	    }
     	  })
     	  .catch(err => {
     	    console.error(err);
-    	    alert("Server error");
     	    info.revert();
     	  });
     	}
+
     
     function openEditModal(dateStr) {
     	  selectedEvent = null;
@@ -526,7 +522,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     	  const end = new Date(start.getTime() + totalMinutes * 60000);
     	  document.getElementById('modalEnd').value =
-    	    end.toISOString().slice(0, 16);
+    		  toLocalDatetimeValue(end);
+
     	}
     
     function renderServices(categories) {
@@ -582,6 +579,63 @@ document.addEventListener('DOMContentLoaded', function () {
     	    container.appendChild(catDiv);
     	  });
     	}
+    
+    function renderServicesForEdit(categories, preselectedIds) {
+    	  const container = document.getElementById('editServiceList');
+    	  container.innerHTML = '';
+    	  selectedEditServiceIds = [...preselectedIds];
+
+    	  categories.forEach(cat => {
+    	    if (!cat.services || cat.services.length === 0) return;
+
+    	    const catDiv = document.createElement('div');
+    	    catDiv.className = 'service-category';
+
+    	    const title = document.createElement('h4');
+    	    title.textContent = cat.categoryName;
+    	    catDiv.appendChild(title);
+
+    	    const grid = document.createElement('div');
+    	    grid.className = 'service-grid';
+
+    	    cat.services.forEach(svc => {
+    	      const btn = document.createElement('button');
+    	      btn.type = 'button';
+    	      btn.className = 'service-btn';
+    	      btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
+
+    	      if (preselectedIds.includes(svc.serviceId)) {
+    	        btn.classList.add('selected');
+    	      }
+
+    	      btn.addEventListener('click', () => {
+    	        btn.classList.toggle('selected');
+
+    	        if (btn.classList.contains('selected')) {
+    	          selectedEditServiceIds.push(svc.serviceId);
+    	        } else {
+    	          selectedEditServiceIds =
+    	            selectedEditServiceIds.filter(id => id !== svc.serviceId);
+    	        }
+
+    	        const startVal = document.getElementById('modalStart').value;
+    	        if (startVal) {
+    	          updateComputedEnd(
+    	            new Date(startVal),
+    	            categories.flatMap(c => c.services)
+    	              .filter(s => selectedEditServiceIds.includes(s.serviceId))
+    	          );
+    	        }
+    	      });
+
+    	      grid.appendChild(btn);
+    	    });
+
+    	    catDiv.appendChild(grid);
+    	    container.appendChild(catDiv);
+    	  });
+    	}
+
 
 
     
@@ -670,6 +724,12 @@ document.addEventListener('DOMContentLoaded', function () {
 <div id="appointmentModal" class="modal-overlay" style="display:none;">
   <div class="modal-card glass-card">
     <h3 id="modalTitle"></h3>
+    
+    <div class="field-group">
+	  <label>Services</label>
+	  <div id="editServiceList"></div>
+	</div>
+    
 
     <div class="field-group">
       <label>Start</label>

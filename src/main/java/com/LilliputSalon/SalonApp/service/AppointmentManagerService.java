@@ -144,7 +144,7 @@ public class AppointmentManagerService {
     }
 
     public List<Appointment> getAllAppointments() {
-        return repo.findAll();
+        return repo.findAllWithServices();
     }
 
     public String validateAppointmentMove(Appointment appt, LocalDateTime newStart, LocalDateTime newEnd) {
@@ -293,7 +293,42 @@ public class AppointmentManagerService {
 
         repo.save(appt);
     }
+    
+    public List<Appointment> getAllServiceAppointments() {
+        return repo.findAllWithServices();
+    }
 
+
+    @Transactional
+    public void updateServices(Appointment appt, List<Long> serviceIds) {
+
+        // 1️⃣ Delete existing services
+        ASrepo.deleteByAppointmentId(appt.getAppointmentId());
+
+        // 2️⃣ Load new services
+        List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(serviceIds);
+        if (services.isEmpty()) {
+            throw new RuntimeException("At least one service is required.");
+        }
+
+        // 3️⃣ Recalculate duration
+        int totalMinutes = services.stream()
+        	    .mapToInt(s -> s.getTypicalDurationMinutes())
+        	    .sum();
+
+
+        appt.setDurationMinutes(totalMinutes);
+
+        // 4️⃣ Recreate AppointmentService rows
+        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
+            AppointmentService as = new AppointmentService();
+            as.setAppointment(appt);
+            as.setService(s);
+            as.setActualPrice(s.getBasePrice());
+            as.setActualDurationMinutes(s.getTypicalDurationMinutes());
+            ASrepo.save(as);
+        }
+    }
 
 
 

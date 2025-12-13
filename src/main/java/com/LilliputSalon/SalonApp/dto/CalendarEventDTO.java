@@ -1,5 +1,7 @@
 package com.LilliputSalon.SalonApp.dto;
 
+import java.util.List;
+
 import lombok.Getter;
 
 @Getter
@@ -9,4 +11,5 @@ public class CalendarEventDTO {
     private String start;
     private String end;
     private Integer stylistId;
+    private List<Long> serviceIds;
 }

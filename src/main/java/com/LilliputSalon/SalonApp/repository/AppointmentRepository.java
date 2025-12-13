@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
@@ -35,6 +36,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
             Integer customerId,
             LocalDateTime after
     );
+    
+    @Query("""
+    	    select distinct a
+    	    from Appointment a
+    	    left join fetch a.appointmentServices aps
+    	    left join fetch aps.service
+    	""")
+    	List<Appointment> findAllWithServices();
+
 
 
 }

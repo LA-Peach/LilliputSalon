@@ -37,308 +37,261 @@ import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 @PreAuthorize("hasAnyRole('OWNER','STYLIST')")
 public class CalendarController {
 
-    private final AppointmentManagerService appointmentService;
-    private final ProfileRepository profileRepo;
-    private final BusinessHoursRepository businessHoursRepo;
-    private final UserRepository userRepo;
-    private final UserTypeRepository userTypeRepo;
-
+	private final AppointmentManagerService appointmentService;
+	private final ProfileRepository profileRepo;
+	private final BusinessHoursRepository businessHoursRepo;
+	private final UserRepository userRepo;
+	private final UserTypeRepository userTypeRepo;
 
+	public CalendarController(AppointmentManagerService appointmentService, ProfileRepository profileRepo,
+			BusinessHoursRepository businessHoursRepo, UserRepository userRepo, UserTypeRepository userTypeRepo) {
+		this.appointmentService = appointmentService;
+		this.profileRepo = profileRepo;
+		this.businessHoursRepo = businessHoursRepo;
+		this.userRepo = userRepo;
+		this.userTypeRepo = userTypeRepo;
+	}
 
-    public CalendarController(AppointmentManagerService appointmentService,
-                              ProfileRepository profileRepo,
-                              BusinessHoursRepository businessHoursRepo,
-                              UserRepository userRepo,
-                              UserTypeRepository userTypeRepo) {
-        this.appointmentService = appointmentService;
-        this.profileRepo = profileRepo;
-        this.businessHoursRepo = businessHoursRepo;
-        this.userRepo = userRepo;
-        this.userTypeRepo = userTypeRepo;
-    }
+	@GetMapping("/calendar")
+	public String calendarPage() {
+		return "calendar"; // MUST NOT start with "/"
+	}
 
-    @GetMapping("/calendar")
-    public String calendarPage() {
-        return "calendar";  // MUST NOT start with "/"
-    }
+	@ResponseBody
+	@GetMapping(value = "/calendar/shifts", produces = "application/json")
+	public List<Map<String, Object>> getShiftEvents() {
 
-    @ResponseBody
-    @GetMapping(value = "/calendar/shifts", produces = "application/json")
-    public List<Map<String, Object>> getShiftEvents() {
+		List<Map<String, Object>> events = new ArrayList<>();
+		List<Availability> shifts = appointmentService.getAllStylistShifts();
+		Map<Long, String> stylistNameCache = new HashMap<>();
 
-        List<Map<String, Object>> events = new ArrayList<>();
-        List<Availability> shifts = appointmentService.getAllStylistShifts();
-        Map<Long, String> stylistNameCache = new HashMap<>();
+		List<String> colorPalette = List.of("#FF7070", "#FFB870", "#FFFF70", "#85FF85", "#70B8FF", "#B870FF");
 
+		for (Availability shift : shifts) {
 
-        List<String> colorPalette = List.of(
-            "#FF7070",
-            "#FFB870",
-            "#FFFF70",
-            "#85FF85",
-            "#70B8FF",
-            "#B870FF"
-        );
+			LocalDate date = shift.getWorkDate();
 
-        for (Availability shift : shifts) {
+			LocalDateTime start = LocalDateTime.of(date, shift.getDayStartTime());
+			LocalDateTime end = LocalDateTime.of(date, shift.getDayEndTime());
 
-            LocalDate date = shift.getWorkDate();
+			Long stylistId = shift.getUser().getId();
 
-            LocalDateTime start = LocalDateTime.of(date, shift.getDayStartTime());
-            LocalDateTime end   = LocalDateTime.of(date, shift.getDayEndTime());
+			String stylistName = stylistNameCache.computeIfAbsent(stylistId,
+					id -> profileRepo.findByUser_Id(id).map(Profile::getFirstName).orElse("Stylist"));
 
-            Long stylistId = shift.getUser().getId();
+			int colorIndex = (int) (stylistId % colorPalette.size());
+			String color = colorPalette.get(colorIndex);
 
-            String stylistName = stylistNameCache.computeIfAbsent(stylistId, id ->
-                profileRepo.findByUser_Id(id)
-                    .map(Profile::getFirstName)
-                    .orElse("Stylist")
-            );
+			Map<String, Object> ev = new HashMap<>();
+			ev.put("id", "shift-" + shift.getAvailabilityId());
+			ev.put("start", start.toString());
+			ev.put("end", end.toString());
+			ev.put("display", "background");
+			ev.put("backgroundColor", color);
+			ev.put("borderColor", color);
+			ev.put("extendedProps", Map.of("stylistId", stylistId, "stylistName", stylistName, "type", "shift"));
 
+			events.add(ev);
 
-            int colorIndex = (int) (stylistId % colorPalette.size());
-            String color = colorPalette.get(colorIndex);
+			if (shift.getBreakTimes() != null) {
+				for (var br : shift.getBreakTimes()) {
 
-            Map<String, Object> ev = new HashMap<>();
-            ev.put("id", "shift-" + shift.getAvailabilityId());
-            ev.put("start", start.toString());
-            ev.put("end", end.toString());
-            ev.put("display", "background");
-            ev.put("backgroundColor", color);
-            ev.put("borderColor", color);
-            ev.put("extendedProps", Map.of(
-            	    "stylistId", stylistId,
-            	    "stylistName", stylistName,
-            	    "type", "shift"
-            	));
+					LocalDateTime bStart = LocalDateTime.of(date, br.getBreakStartTime());
+					LocalDateTime bEnd = LocalDateTime.of(date, br.getBreakEndTime());
 
+					Map<String, Object> brEv = new HashMap<>();
+					brEv.put("id", "break-" + br.getBreakId());
+					brEv.put("start", bStart.toString());
+					brEv.put("end", bEnd.toString());
+					brEv.put("display", "background");
+					brEv.put("extendedProps",
+							Map.of("stylistId", stylistId, "stylistName", stylistName, "type", "break"));
 
-            events.add(ev);
+					brEv.put("classNames", List.of("break"));
 
-            if (shift.getBreakTimes() != null) {
-                for (var br : shift.getBreakTimes()) {
+					events.add(brEv);
+				}
+			}
 
-                    LocalDateTime bStart =
-                        LocalDateTime.of(date, br.getBreakStartTime());
-                    LocalDateTime bEnd =
-                        LocalDateTime.of(date, br.getBreakEndTime());
+		}
 
-                    Map<String, Object> brEv = new HashMap<>();
-                    brEv.put("id", "break-" + br.getBreakId());
-                    brEv.put("start", bStart.toString());
-                    brEv.put("end", bEnd.toString());
-                    brEv.put("display", "background");
-                    brEv.put("extendedProps", Map.of(
-                    	    "stylistId", stylistId,
-                    	    "stylistName", stylistName,
-                    	    "type", "break"
-                    	));
+		return events;
+	}
 
+	@ResponseBody
+	@GetMapping(value = "/calendar/events", produces = "application/json")
+	public List<Map<String, Object>> getEvents() {
 
-                    brEv.put("classNames", List.of("break"));
+		List<Appointment> appts = appointmentService.getAllServiceAppointments();
 
+		Map<Long, Profile> profileCache = new HashMap<>();
 
-                    events.add(brEv);
-                }
-            }
+		// List of distinct, soft colors
+		List<String> colorPalette = List.of("#FF7070", // light red
+				"#FFB870", // light orange
+				"#FFFF70", // light yellow
+				"#85FF85", // light green
+				"#70B8FF", // light blue
+				"#B870FF" // light purple
+		);
 
+		List<Map<String, Object>> events = new ArrayList<>();
 
-        }
+		for (Appointment appt : appts) {
 
+			Map<String, Object> ev = new HashMap<>();
 
+			ev.put("id", appt.getAppointmentId());
 
-        return events;
-    }
+			var start = appt.getScheduledStartDateTime();
+			var end = start.plusMinutes(appt.getTotalDurationMinutes());
 
+			ev.put("start", start.toString());
+			ev.put("end", end.toString());
 
+			Profile stylist = profileCache.computeIfAbsent(appt.getStylistId().longValue(),
+					id -> profileRepo.findByUser_Id(id).orElse(null));
 
-    @ResponseBody
-    @GetMapping(value = "/calendar/events", produces = "application/json")
-    public List<Map<String, Object>> getEvents() {
+			Profile customer = profileCache.computeIfAbsent(appt.getCustomerId().longValue(),
+					id -> profileRepo.findByUser_Id(id).orElse(null));
 
-        List<Appointment> appts = appointmentService.getAllAppointments();
-        Map<Long, Profile> profileCache = new HashMap<>();
+			String stylistName = stylist != null ? stylist.getFirstName() : "Stylist";
+			String customerName = customer != null ? customer.getFirstName() : "Client";
 
-        // List of distinct, soft colors
-        List<String> colorPalette = List.of(
-            "#FF7070", // light red
-            "#FFB870", // light orange
-            "#FFFF70", // light yellow
-            "#85FF85", // light green
-            "#70B8FF", // light blue
-            "#B870FF"  // light purple
-        );
+			ev.put("title", stylistName + " — " + customerName);
 
-        List<Map<String, Object>> events = new ArrayList<>();
+			// 🎨 Assign stylist-specific color
+			int colorIndex = Math.toIntExact(appt.getStylistId() % colorPalette.size());
+			ev.put("backgroundColor", colorPalette.get(colorIndex));
+			ev.put("borderColor", colorPalette.get(colorIndex));
 
-        for (Appointment appt : appts) {
+			List<Long> serviceIds = appt.getAppointmentServices() == null ? List.of()
+					: appt.getAppointmentServices().stream().map(as -> as.getService().getId()).toList();
 
-            Map<String, Object> ev = new HashMap<>();
+			ev.put("extendedProps", Map.of("status", appt.getStatus(), "serviceIds", serviceIds));
 
-            ev.put("id", appt.getAppointmentId());
+			events.add(ev);
+		}
 
-            var start = appt.getScheduledStartDateTime();
-            var end = start.plusMinutes(appt.getTotalDurationMinutes());
+		return events;
+	}
 
-            ev.put("start", start.toString());
-            ev.put("end", end.toString());
+	@PostMapping("/calendar/update")
+	@ResponseBody
+	public Map<String, Object> updateEvent(@RequestBody CalendarEventDTO dto) {
 
-            Profile stylist = profileCache.computeIfAbsent(
-            	    appt.getStylistId().longValue(),
-            	    id -> profileRepo.findByUser_Id(id).orElse(null)
-            	);
+	    Map<String, Object> result = new HashMap<>();
 
-            	Profile customer = profileCache.computeIfAbsent(
-            	    appt.getCustomerId().longValue(),
-            	    id -> profileRepo.findByUser_Id(id).orElse(null)
-            	);
+	    try {
+	        Appointment appt = appointmentService.getById(dto.getId());
+	        if (appt == null) {
+	            return Map.of("status", "error", "message", "Appointment not found");
+	        }
 
-            String stylistName = stylist != null ? stylist.getFirstName() : "Stylist";
-            String customerName = customer != null ? customer.getFirstName() : "Client";
+	        ZoneId zone = ZoneId.systemDefault();
 
-            ev.put("title", stylistName + " — " + customerName);
+	        LocalDateTime start =
+	            LocalDateTime.ofInstant(Instant.parse(dto.getStart()), zone);
 
-            // 🎨 Assign stylist-specific color
-            int colorIndex = Math.toIntExact(appt.getStylistId() % colorPalette.size());
-            ev.put("backgroundColor", colorPalette.get(colorIndex));
-            ev.put("borderColor", colorPalette.get(colorIndex));
+	        // 🔁 update services + duration if provided
+	        if (dto.getServiceIds() != null && !dto.getServiceIds().isEmpty()) {
+	            appointmentService.updateServices(appt, dto.getServiceIds());
+	        }
 
-            ev.put("extendedProps", Map.of(
-            	    "status", appt.getStatus()
-            	));
+	        // recompute end from updated duration
+	        LocalDateTime end =
+	            start.plusMinutes(appt.getTotalDurationMinutes());
 
+	        String validationError =
+	            appointmentService.validateAppointmentMove(appt, start, end);
 
-            events.add(ev);
-        }
+	        if (validationError != null) {
+	            return Map.of("status", "error", "message", validationError);
+	        }
 
-        return events;
-    }
+	        appt.setScheduledStartDateTime(start);
+	        appointmentService.save(appt);
 
-    @PostMapping("/calendar/update")
-    @ResponseBody
-    public Map<String, Object> updateEvent(@RequestBody CalendarEventDTO dto) {
+	        return Map.of("status", "ok");
 
-        Map<String, Object> result = new HashMap<>();
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        return Map.of("status", "error", "message", ex.getMessage());
+	    }
+	}
 
-        try {
-            Instant instantStart = Instant.parse(dto.getStart());
-            Instant instantEnd = dto.getEnd() != null
-                    ? Instant.parse(dto.getEnd())
-                    : null;
 
-            ZoneId zone = ZoneId.systemDefault();
 
-            LocalDateTime start = LocalDateTime.ofInstant(instantStart, zone);
-            LocalDateTime end = instantEnd != null
-                    ? LocalDateTime.ofInstant(instantEnd, zone)
-                    : null;
 
-            Appointment appt = appointmentService.getById(dto.getId());
+	@PostMapping("/appointments/delete/{id}")
+	@ResponseBody
+	@PreAuthorize("hasAnyRole('OWNER','STYLIST')")
+	public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {
+		try {
+			appointmentService.delete(id);
+			return ResponseEntity.ok().build();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			return ResponseEntity.status(500).body("Unable to delete appointment");
+		}
+	}
 
-            String validationError =
-                    appointmentService.validateAppointmentMove(appt, start, end);
-            if (validationError != null) {
-                result.put("status", "error");
-                result.put("message", validationError);
-                return result;
-            }
+	@PostMapping("/appointments/create")
+	@ResponseBody
+	public Map<String, Object> createAppointment(@RequestBody CreateAppointmentDTO dto) {
 
-            appt.setScheduledStartDateTime(start);
-            appointmentService.save(appt);
+		Map<String, Object> result = new HashMap<>();
 
-            result.put("status", "ok");
-            return result;
+		try {
+			Long customerId = resolveOrCreateCustomer(dto);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            result.put("status", "error");
-            result.put("message", ex.getMessage());
-            return result;
-        }
-    }
+			BusinessHours bh = businessHoursRepo.findById(1)
+					.orElseThrow(() -> new RuntimeException("Business hours missing"));
 
+			appointmentService.create(dto, customerId, bh);
 
-    @PostMapping("/appointments/delete/{id}")
-    @ResponseBody
-    @PreAuthorize("hasAnyRole('OWNER','STYLIST')")
-    public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {
-        try {
-            appointmentService.delete(id);
-            return ResponseEntity.ok().build();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            return ResponseEntity.status(500)
-                .body("Unable to delete appointment");
-        }
-    }
+			result.put("status", "ok");
+			return result;
 
-    @PostMapping("/appointments/create")
-    @ResponseBody
-    public Map<String, Object> createAppointment(@RequestBody CreateAppointmentDTO dto) {
+		} catch (Exception e) {
+			result.put("status", "error");
+			result.put("message", e.getMessage());
+			return result;
+		}
+	}
 
-        Map<String, Object> result = new HashMap<>();
+	private Long resolveOrCreateCustomer(CreateAppointmentDTO dto) {
 
-        try {
-            Long customerId = resolveOrCreateCustomer(dto);
+		String email = dto.getCustomerEmail();
+		if (email == null || email.isBlank()) {
+			throw new RuntimeException("Customer email is required.");
+		}
 
-            BusinessHours bh = businessHoursRepo.findById(1)
-                .orElseThrow(() -> new RuntimeException("Business hours missing"));
+		var matches = profileRepo.searchByEmail(email.trim());
 
-            appointmentService.create(dto, customerId, bh);
+		if (!matches.isEmpty()) {
+			return matches.get(0).getUser().getId();
+		}
 
-            result.put("status", "ok");
-            return result;
+		// create walk-in guest
+		User guestUser = new User();
+		guestUser.setEmail(email.trim());
+		guestUser.setIsActive(false);
+		guestUser.setPasswordHash("TEMP_GUEST");
+		userRepo.save(guestUser);
 
-        } catch (Exception e) {
-            result.put("status", "error");
-            result.put("message", e.getMessage());
-            return result;
-        }
-    }
+		Profile guestProfile = new Profile();
+		guestProfile.setUser(guestUser);
+		guestProfile
+				.setFirstName(Optional.ofNullable(dto.getGuestFirstName()).filter(s -> !s.isBlank()).orElse("Walk-in"));
+		guestProfile.setLastName(Optional.ofNullable(dto.getGuestLastName()).orElse(""));
+		guestProfile.setPhone(dto.getGuestPhone());
+		guestProfile.setIsActiveStylist(false);
+		guestProfile.setUserType(userTypeRepo.findByTypeNameIgnoreCase("CUSTOMER").orElseThrow());
 
+		profileRepo.save(guestProfile);
 
-    private Long resolveOrCreateCustomer(CreateAppointmentDTO dto) {
-
-        String email = dto.getCustomerEmail();
-        if (email == null || email.isBlank()) {
-            throw new RuntimeException("Customer email is required.");
-        }
-
-        var matches = profileRepo.searchByEmail(email.trim());
-
-        if (!matches.isEmpty()) {
-            return matches.get(0).getUser().getId();
-        }
-
-
-        // create walk-in guest
-        User guestUser = new User();
-        guestUser.setEmail(email.trim());
-        guestUser.setIsActive(false);
-        guestUser.setPasswordHash("TEMP_GUEST");
-        userRepo.save(guestUser);
-
-        Profile guestProfile = new Profile();
-        guestProfile.setUser(guestUser);
-        guestProfile.setFirstName(
-            Optional.ofNullable(dto.getGuestFirstName()).filter(s -> !s.isBlank()).orElse("Walk-in")
-        );
-        guestProfile.setLastName(
-            Optional.ofNullable(dto.getGuestLastName()).orElse("")
-        );
-        guestProfile.setPhone(dto.getGuestPhone());
-        guestProfile.setIsActiveStylist(false);
-        guestProfile.setUserType(
-            userTypeRepo.findByTypeNameIgnoreCase("CUSTOMER")
-                .orElseThrow()
-        );
-
-        profileRepo.save(guestProfile);
-
-        return guestUser.getId();
-    }
-
-
-
+		return guestUser.getId();
+	}
 
 }
