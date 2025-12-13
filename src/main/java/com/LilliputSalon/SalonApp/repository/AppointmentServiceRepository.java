@@ -11,19 +11,23 @@ import com.LilliputSalon.SalonApp.domain.AppointmentService;
 
 public interface AppointmentServiceRepository extends JpaRepository<AppointmentService, Integer> {
 
-    List<AppointmentService> findByAppointmentId(Integer appointmentId);
+	List<AppointmentService> findByAppointment_AppointmentId(Integer appointmentId);
 
-    @Query("""
-    	    SELECT aps
-    	    FROM AppointmentService aps
-    	        JOIN FETCH aps.service
-    	    WHERE aps.appointmentId = :appointmentId
-    	""")
-    	List<AppointmentService> findWithServiceByAppointmentId(Integer appointmentId);
+	@Query("""
+		    SELECT aps
+		    FROM AppointmentService aps
+		        JOIN FETCH aps.service
+		    WHERE aps.appointment.appointmentId = :appointmentId
+		""")
+		List<AppointmentService> findWithServiceByAppointmentId(
+		    @Param("appointmentId") Integer appointmentId
+		);
 
-    @Modifying(clearAutomatically = true)
-    @Query("DELETE FROM AppointmentService aps WHERE aps.appointmentId = :id")
-    void deleteByAppointmentId(@Param("id") Integer id);
+
+	@Modifying(clearAutomatically = true)
+	@Query("DELETE FROM AppointmentService aps WHERE aps.appointment.appointmentId = :id")
+	void deleteByAppointmentId(@Param("id") Integer id);
+
 
 
 

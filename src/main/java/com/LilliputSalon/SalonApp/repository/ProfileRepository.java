@@ -15,15 +15,14 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     Optional<Profile> findByUser_Id(Long userId);
     List<Profile> findByIsActiveStylistTrue();
 
-
     @Query("""
-    	    select p
-    	    from Profile p
-    	    where lower(p.user.email) like lower(concat('%', :email, '%'))
-    	""")
-    	List<Profile> searchByEmail(@Param("email") String email);
-
-
-
+            select p
+            from Profile p
+            join p.user u
+            where lower(u.email) like lower(concat('%', :q, '%'))
+        """)
+        List<Profile> searchByEmail(@Param("q") String q);
 
 }
+
+

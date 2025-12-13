@@ -11,12 +11,16 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.AppointmentService;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
+import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
+import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
+import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -26,13 +30,17 @@ public class AppointmentManagerService {
     private final AppointmentRepository repo;
     private final AvailibilityRepository availabilityRepo;
     private final AppointmentServiceRepository ASrepo;
+    private final ServiceRepository serviceRepo;
+
 
     public AppointmentManagerService(AppointmentRepository repo,
                                      AvailibilityRepository availabilityRepo,
-                                     AppointmentServiceRepository ASrepo) {
+                                     AppointmentServiceRepository ASrepo,
+                                     ServiceRepository serviceRepo) {
         this.repo = repo;
         this.availabilityRepo = availabilityRepo;
         this.ASrepo = ASrepo;
+        this.serviceRepo = serviceRepo;
     }
 
 
@@ -196,7 +204,7 @@ public class AppointmentManagerService {
 			}
 
             LocalDateTime oStart = other.getScheduledStartDateTime();
-            LocalDateTime oEnd = oStart.plusMinutes(other.getDurationMinutes());
+            LocalDateTime oEnd = oStart.plusMinutes(other.getTotalDurationMinutes());
 
             boolean overlap =
                     !(newEnd.isBefore(oStart) || newStart.isAfter(oEnd));
@@ -230,31 +238,61 @@ public class AppointmentManagerService {
     }
 
     @Transactional
-    public void create(CalendarEventDTO dto) {
+    public void create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
 
-        ZoneId zone = ZoneId.systemDefault();
+    	Instant instant = Instant.parse(dto.getStart());
+    	LocalDateTime start =
+    	    LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-        LocalDateTime start = LocalDateTime.ofInstant(
-            Instant.parse(dto.getStart()), zone);
 
-        LocalDateTime end = LocalDateTime.ofInstant(
-            Instant.parse(dto.getEnd()), zone);
+        // 1️⃣ Load services
+        List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(dto.getServiceIds());
+        if (services.isEmpty()) {
+            throw new RuntimeException("At least one service is required.");
+        }
 
+        // 2️⃣ Calculate total duration
+        int totalMinutes = services.stream()
+        	    .mapToInt(s -> s.getTypicalDurationMinutes())
+        	    .sum();
+
+
+        // 3️⃣ Create appointment
         Appointment appt = new Appointment();
-        appt.setScheduledStartDateTime(start);
-        appt.setDurationMinutes(
-            (int) Duration.between(start, end).toMinutes()
-        );
-
-        // 🔑 stylist assignment
+        appt.setCustomerId(customerId);
         appt.setStylistId(dto.getStylistId());
-
+        appt.setScheduledStartDateTime(start);
+        appt.setDurationMinutes(totalMinutes);
+        appt.setBusinessHours(bh);
         appt.setStatus("Scheduled");
         appt.setIsCompleted(false);
 
         repo.save(appt);
-    }
 
+        // 4️⃣ Create AppointmentService rows
+        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
+            AppointmentService as = new AppointmentService();
+            as.setAppointment(appt);
+            as.setService(s);
+            as.setActualPrice(s.getBasePrice());
+            as.setActualDurationMinutes(s.getTypicalDurationMinutes());
+            ASrepo.save(as);
+        }
+    }
+    
+    
+
+    public void updateAppointment(Integer id, LocalDateTime newStart) {
+
+        Appointment appt = repo.findById(id).orElseThrow();
+
+        // 🔒 Only allow start change
+        appt.setScheduledStartDateTime(newStart);
+
+        // ❌ DO NOT accept end or duration from client
+
+        repo.save(appt);
+    }
 
 
 

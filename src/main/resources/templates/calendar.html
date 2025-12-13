@@ -62,7 +62,21 @@ document.addEventListener('DOMContentLoaded', function () {
 	const csrfToken = document.querySelector('meta[name="_csrf"]').content;
 	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
 	
+	const createStartInput = document.getElementById('createStart');
 	
+	let selectedServiceIds = [];
+
+	
+	function toLocalDatetimeValue(date) {
+		  const pad = n => String(n).padStart(2, '0');
+		  return (
+		    date.getFullYear() + '-' +
+		    pad(date.getMonth() + 1) + '-' +
+		    pad(date.getDate()) + 'T' +
+		    pad(date.getHours()) + ':' +
+		    pad(date.getMinutes())
+		  );
+	}
 
 	
 	let availabilityTogglesBuilt = false;
@@ -90,9 +104,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         editable: true,
         droppable: true,
-        eventResizableFromStart: true,
-        eventDurationEditable: true,
-        
+        eventResizableFromStart: false,
+        eventDurationEditable: false,
+    
 
 
         eventSources: [
@@ -136,16 +150,17 @@ document.addEventListener('DOMContentLoaded', function () {
         eventTextColor: 'black',
         
         eventAllow(dropInfo, draggedEvent) {
+        	  // Only block completed appointments
         	  return draggedEvent.extendedProps?.status !== 'Completed';
         	},
+
+
 
 
         eventDrop(info) {
             updateEvent(info);
         },
-        eventResize(info) {
-            updateEvent(info);
-        },
+    
         eventClick(info) {
         	  if (info.event.display === 'background') return;
 
@@ -190,22 +205,15 @@ document.addEventListener('DOMContentLoaded', function () {
     function openCreateModal() {
     	  const now = new Date();
 
-    	  const startInput = document.getElementById('createStart');
-    	  const endInput   = document.getElementById('createEnd');
+    	  const createStartInput = document.getElementById('createStart');
 
-    	  startInput.value = now.toISOString().slice(0, 16);
+    }
 
-    	  const end = new Date(now.getTime() + 60 * 60 * 1000);
-    	  endInput.value = end.toISOString().slice(0, 16);
-
-    	  createModal.style.display = 'flex';
-    	}
 
 
     function closeCreateModal() {
       createModal.style.display = 'none';
       document.getElementById('createStart').value = '';
-      document.getElementById('createEnd').value = '';
     }
 
     createModal.addEventListener('click', e => {
@@ -244,6 +252,7 @@ document.addEventListener('DOMContentLoaded', function () {
     .addEventListener('click', async () => {
 
       await loadStylists();
+      await loadServices();
 
       createModal.style.display = 'flex';
 
@@ -251,11 +260,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const now = new Date();
 
         document.getElementById('createStart').value =
-          now.toISOString().slice(0, 16);
-
-        const end = new Date(now.getTime() + 60 * 60 * 1000);
-        document.getElementById('createEnd').value =
-          end.toISOString().slice(0, 16);
+        	toLocalDatetimeValue(now);
       }, 0);
   });
 
@@ -291,6 +296,12 @@ document.addEventListener('DOMContentLoaded', function () {
     	    alert('Start and end required');
     	    return;
     	  }
+    	  
+    	  if (new Date(end) <= new Date(start)) {
+    		  alert('End time must be after start time');
+    		  return;
+    		}
+
 
     	 
 
@@ -334,21 +345,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     	  return stylists;
     	}
+    
+    async function loadServices() {
+    	  const res = await fetch('/services/api');
+    	  const services = await res.json();
+    	  renderServices(services);
+    	}
 
-    	
+
     document.getElementById('createSaveBtn')
     .addEventListener('click', async () => {
 
-      const stylistValue = document.getElementById('createStylist').value;
-      const stylistId = Number(stylistValue);
+      const stylistId = Number(document.getElementById('createStylist').value);
+      const start = createStartInput.value;
 
-      const start = document.getElementById('createStart').value;
-      const end   = document.getElementById('createEnd').value;
+      const customerEmail  = document.getElementById('customerEmail').value;
+      const guestFirstName = document.getElementById('guestFirstName').value;
+      const guestLastName  = document.getElementById('guestLastName').value;
+      const guestPhone     = document.getElementById('guestPhone').value;
 
-      console.log({ stylistId, start, end });
-
-      if (Number.isNaN(stylistId) || !start || !end) {
-        alert('All fields required');
+      if (!stylistId || !start || selectedServiceIds.length === 0) {
+        alert('Stylist, start time, and at least one service are required.');
         return;
       }
 
@@ -359,16 +376,14 @@ document.addEventListener('DOMContentLoaded', function () {
           [csrfHeader]: csrfToken
         },
         body: JSON.stringify({
-        	  stylistId,
-        	  start: new Date(start).toISOString(),
-        	  end: new Date(end).toISOString(),
-
-        	  customerEmail: document.getElementById('customerEmail').value,
-        	  guestFirstName: document.getElementById('guestFirstName').value,
-        	  guestLastName: document.getElementById('guestLastName').value,
-        	  guestPhone: document.getElementById('guestPhone').value
-        	})
-
+          stylistId,
+          start: new Date(start).toISOString(),
+          serviceIds: selectedServiceIds,
+          customerEmail,
+          guestFirstName,
+          guestLastName,
+          guestPhone
+        })
       });
 
       const data = await res.json();
@@ -380,7 +395,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       calendar.refetchEvents();
       closeCreateModal();
-  });
+    });
+
 
 
     
@@ -462,8 +478,27 @@ document.addEventListener('DOMContentLoaded', function () {
     	  isCreateMode = true;
 
     	  const modal = document.getElementById('appointmentModal');
-    	  const startInput = document.getElementById('modalStart');
-    	  const endInput   = document.getElementById('modalEnd');
+    	  const modalStartInput = document.getElementById('modalStart');
+    	  const modalEndInput   = document.getElementById('modalEnd');
+
+    	  function ensureEditEndAfterStart() {
+    	    if (!modalStartInput.value) return;
+
+    	    const start = new Date(modalStartInput.value);
+    	    let end = modalEndInput.value
+    	      ? new Date(modalEndInput.value)
+    	      : null;
+
+    	    if (!end || end <= start) {
+    	      const fixedEnd = new Date(start.getTime() + 30 * 60 * 1000);
+    	      modalEndInput.value = toLocalDatetimeValue(fixedEnd);
+    	    }
+    	  }
+
+    	  modalStartInput.addEventListener('change', ensureEditEndAfterStart);
+    	  modalEndInput.addEventListener('change', ensureEditEndAfterStart);
+
+
 
     	  // Prefill start time
     	  startInput.value = dateStr.slice(0, 16);
@@ -471,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
     	  // Optional: default duration (1 hour)
     	  const startDate = new Date(dateStr);
     	  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-    	  endInput.value = endDate.toISOString().slice(0, 16);
+    	  endInput.value = toLocalDatetimeValue(endDate);
 
     	  document.getElementById('modalTitle').textContent = 'New Appointment';
 
@@ -483,9 +518,72 @@ document.addEventListener('DOMContentLoaded', function () {
 
     	  modal.style.display = 'flex';
     	}
+    
+    function updateComputedEnd(start, services) {
+    	  const totalMinutes = services.reduce(
+    	    (sum, s) => sum + s.typicalDurationMinutes, 0
+    	  );
+
+    	  const end = new Date(start.getTime() + totalMinutes * 60000);
+    	  document.getElementById('modalEnd').value =
+    	    end.toISOString().slice(0, 16);
+    	}
+    
+    function renderServices(categories) {
+    	  const container = document.getElementById('serviceList');
+    	  container.innerHTML = '';
+    	  selectedServiceIds = [];
+
+    	  categories.forEach(cat => {
+    	    if (!cat.services || cat.services.length === 0) return;
+
+    	    const catDiv = document.createElement('div');
+    	    catDiv.className = 'service-category';
+
+    	    const title = document.createElement('h4');
+    	    title.textContent = cat.categoryName;
+    	    catDiv.appendChild(title);
+
+    	    const grid = document.createElement('div');
+    	    grid.className = 'service-grid';
+
+    	    cat.services.forEach(svc => {
+    	      const btn = document.createElement('button');
+    	      btn.type = 'button';
+    	      btn.className = 'service-btn';
+    	      btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
+
+    	      btn.addEventListener('click', () => {
+    	        btn.classList.toggle('selected');
+
+    	        if (btn.classList.contains('selected')) {
+    	          selectedServiceIds.push(svc.serviceId);
+    	        } else {
+    	          selectedServiceIds =
+    	            selectedServiceIds.filter(id => id !== svc.serviceId);
+    	        }
+
+    	        // auto-update end time
+    	        const startVal = createStartInput.value;
+    	        if (startVal) {
+    	          updateComputedEnd(
+    	            new Date(startVal),
+    	            cat.services.filter(s =>
+    	              selectedServiceIds.includes(s.serviceId)
+    	            )
+    	          );
+    	        }
+    	      });
+
+    	      grid.appendChild(btn);
+    	    });
+
+    	    catDiv.appendChild(grid);
+    	    container.appendChild(catDiv);
+    	  });
+    	}
 
 
-   
     
     function closeModal() {
     	  document.getElementById('appointmentModal').style.display = 'none';
@@ -528,19 +626,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
         customers.forEach(c => {
           const div = document.createElement('div');
-          div.textContent = `${c.email} (${c.name})`;
+          div.textContent = `${c.email} (${c.firstName} ${c.lastName})`;
           div.style.padding = '8px 12px';
           div.style.cursor = 'pointer';
 
-          div.addEventListener('click', () => {
-            emailInput.value = c.email;
-            resultsBox.style.display = 'none';
+          div.textContent = `${c.email} (${c.firstName} ${c.lastName})`;
 
-            // clear walk-in fields since this is an existing customer
-            document.getElementById('guestFirstName').value = '';
-            document.getElementById('guestLastName').value = '';
-            document.getElementById('guestPhone').value = '';
+          div.addEventListener('click', () => {
+            // email
+            emailInput.value = c.email;
+
+            // autofill customer info
+            document.getElementById('guestFirstName').value = c.firstName || '';
+            document.getElementById('guestLastName').value  = c.lastName  || '';
+            document.getElementById('guestPhone').value     = c.phone     || '';
+
+            resultsBox.style.display = 'none';
           });
+
 
           resultsBox.appendChild(div);
         });
@@ -558,6 +661,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
+
+
 </script>
 
 
@@ -573,7 +678,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <div class="field-group">
       <label>End</label>
-      <input type="datetime-local" id="modalEnd">
+      <input type="datetime-local" id="modalEnd" disabled>
     </div>
 
     <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
@@ -587,6 +692,12 @@ document.addEventListener('DOMContentLoaded', function () {
 <div id="createModal" class="modal-overlay" style="display:none;">
   <div class="modal-card glass-card">
     <h3>New Appointment</h3>
+    
+    <div class="field-group">
+	  <label>Services</label>
+	  <div id="serviceList"></div>
+	</div>
+    
 
     <div class="field-group">
       <label>Stylist</label>
@@ -624,12 +735,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 	
 	<div class="field-group">
-	  <label>First Name (walk-in)</label>
+	  <label>First Name</label>
 	  <input type="text" id="guestFirstName">
 	</div>
 	
 	<div class="field-group">
-	  <label>Last Name (walk-in)</label>
+	  <label>Last Name</label>
 	  <input type="text" id="guestLastName">
 	</div>
 	
@@ -644,10 +755,6 @@ document.addEventListener('DOMContentLoaded', function () {
       <input type="datetime-local" id="createStart">
     </div>
 
-    <div class="field-group">
-      <label>End</label>
-      <input type="datetime-local" id="createEnd">
-    </div>
 
     <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
       <button id="createSaveBtn" class="btn-primary" type="button">Create</button>

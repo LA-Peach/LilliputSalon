@@ -2,6 +2,7 @@ package com.LilliputSalon.SalonApp.web;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,16 +25,18 @@ public class CustomerController {
     @GetMapping("/customers/search")
     @ResponseBody
     public List<Map<String, String>> searchCustomers(@RequestParam String q) {
-
-        return profileRepo
-            .searchByEmail(q)
+        return profileRepo.searchByEmail(q)
             .stream()
             .map(p -> Map.of(
                 "email", p.getUser().getEmail(),
-                "name", p.getFirstName() + " " + p.getLastName()
+                "firstName", p.getFirstName(),
+                "lastName", p.getLastName(),
+                "phone", Optional.ofNullable(p.getPhone()).orElse("")
             ))
             .toList();
     }
 
-
 }
+
+
+

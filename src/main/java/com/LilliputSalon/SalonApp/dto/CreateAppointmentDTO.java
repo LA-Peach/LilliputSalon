@@ -1,5 +1,7 @@
 package com.LilliputSalon.SalonApp.dto;
 
+import java.util.List;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,7 +12,9 @@ import lombok.Setter;
 public class CreateAppointmentDTO {
     private Integer stylistId;
     private String start;
-    private String end;
+    
+    private List<Long> serviceIds;
+
 
     private String customerEmail;   // ✅ new (for existing customers)
     private String guestFirstName;  // ✅ optional (walk-in)

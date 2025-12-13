@@ -178,7 +178,7 @@ public class CalendarController {
             ev.put("id", appt.getAppointmentId());
 
             var start = appt.getScheduledStartDateTime();
-            var end = start.plusMinutes(appt.getDurationMinutes());
+            var end = start.plusMinutes(appt.getTotalDurationMinutes());
 
             ev.put("start", start.toString());
             ev.put("end", end.toString());
@@ -221,28 +221,29 @@ public class CalendarController {
         Map<String, Object> result = new HashMap<>();
 
         try {
-            // Parse FullCalendar UTC timestamps
             Instant instantStart = Instant.parse(dto.getStart());
-            Instant instantEnd = dto.getEnd() != null ? Instant.parse(dto.getEnd()) : null;
+            Instant instantEnd = dto.getEnd() != null
+                    ? Instant.parse(dto.getEnd())
+                    : null;
 
             ZoneId zone = ZoneId.systemDefault();
 
             LocalDateTime start = LocalDateTime.ofInstant(instantStart, zone);
-            LocalDateTime end = instantEnd != null ? LocalDateTime.ofInstant(instantEnd, zone) : null;
+            LocalDateTime end = instantEnd != null
+                    ? LocalDateTime.ofInstant(instantEnd, zone)
+                    : null;
 
             Appointment appt = appointmentService.getById(dto.getId());
 
-            // Validate using your existing logic
-            String validationError = appointmentService.validateAppointmentMove(appt, start, end);
+            String validationError =
+                    appointmentService.validateAppointmentMove(appt, start, end);
             if (validationError != null) {
                 result.put("status", "error");
                 result.put("message", validationError);
                 return result;
             }
 
-            // Save new times
             appt.setScheduledStartDateTime(start);
-            appt.setDurationMinutes((int) java.time.Duration.between(start, end).toMinutes());
             appointmentService.save(appt);
 
             result.put("status", "ok");
@@ -251,10 +252,11 @@ public class CalendarController {
         } catch (Exception ex) {
             ex.printStackTrace();
             result.put("status", "error");
-            result.put("message", "Server error: " + ex.getMessage());
+            result.put("message", ex.getMessage());
             return result;
         }
     }
+
 
     @PostMapping("/appointments/delete/{id}")
     @ResponseBody
@@ -274,44 +276,26 @@ public class CalendarController {
     @ResponseBody
     public Map<String, Object> createAppointment(@RequestBody CreateAppointmentDTO dto) {
 
-      Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = new HashMap<>();
 
-      try {
-        // times
-        Instant startI = Instant.parse(dto.getStart());
-        Instant endI   = Instant.parse(dto.getEnd());
-        ZoneId zone = ZoneId.systemDefault();
-        LocalDateTime start = LocalDateTime.ofInstant(startI, zone);
-        LocalDateTime end   = LocalDateTime.ofInstant(endI, zone);
+        try {
+            Long customerId = resolveOrCreateCustomer(dto);
 
-        // ✅ resolve customerId by email (or create guest)
-        Long customerId = resolveOrCreateCustomer(dto);
+            BusinessHours bh = businessHoursRepo.findById(1)
+                .orElseThrow(() -> new RuntimeException("Business hours missing"));
 
-        // business hours (you’ll likely want to map based on day-of-week later)
-        BusinessHours bh = businessHoursRepo.findById(1)
-            .orElseThrow(() -> new RuntimeException("Business hours missing"));
+            appointmentService.create(dto, customerId, bh);
 
-        Appointment appt = new Appointment();
-        appt.setCustomerId(customerId);              // ✅ FIX
-        appt.setStylistId(dto.getStylistId());
-        appt.setScheduledStartDateTime(start);
-        appt.setDurationMinutes((int) Duration.between(start, end).toMinutes());
-        appt.setBusinessHours(bh);
-        appt.setStatus("Scheduled");
-        appt.setIsCompleted(false);
+            result.put("status", "ok");
+            return result;
 
-        appointmentService.save(appt);
-
-        result.put("status", "ok");
-        return result;
-
-      } catch (Exception e) {
-        e.printStackTrace();
-        result.put("status", "error");
-        result.put("message", e.getMessage());
-        return result;
-      }
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("message", e.getMessage());
+            return result;
+        }
     }
+
 
     private Long resolveOrCreateCustomer(CreateAppointmentDTO dto) {
 
