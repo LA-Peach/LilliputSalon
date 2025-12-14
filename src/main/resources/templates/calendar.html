@@ -173,6 +173,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         
+        allDaySlot: false,
+        
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
