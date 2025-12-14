@@ -682,6 +682,11 @@ button {
   );
 }
 
+.fc-non-business {
+    background-color: rgba(0, 0, 0, 0.15) !important;
+}
+
+
 .service-category {
   margin-bottom: 16px;
 }

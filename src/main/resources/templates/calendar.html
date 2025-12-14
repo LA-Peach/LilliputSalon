@@ -174,6 +174,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         initialView: 'dayGridMonth',
         
         allDaySlot: false,
+        hiddenDays: [0],
+        
+        slotDuration: '00:15:00',
+        snapDuration: '00:15:00',
+        
+        slotMinTime: '09:00:00',
+        slotMaxTime: '19:00:00',
         
         headerToolbar: {
             left: 'prev,next today',
@@ -186,8 +193,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             { daysOfWeek: [6], startTime: '09:00', endTime: '17:00' }
         ],
         
-        slotMinTime: '09:00:00',
-        slotMaxTime: '19:00:00',
+        
+        nowIndicator: true,
+        expandRows: true,
+        height: 'auto',
         
         editable: true,
         droppable: true,
@@ -222,8 +231,38 @@ document.addEventListener('DOMContentLoaded', async function () {
         },
         
         eventAllow(dropInfo, draggedEvent) {
-            return draggedEvent.extendedProps?.status !== 'Completed';
+
+            // 🚫 completed appointments never move
+            if (draggedEvent.extendedProps?.status === 'Completed') {
+                return false;
+            }
+
+            const start = dropInfo.start;
+            const end   = dropInfo.end;
+
+            if (!start || !end) return false;
+
+            const day = start.getDay(); // 0=Sun, 6=Sat
+            const startHour = start.getHours() + start.getMinutes() / 60;
+            const endHour   = end.getHours() + end.getMinutes() / 60;
+
+            // ⏰ weekday hours
+            if (day >= 1 && day <= 5) {
+                if (startHour < 9 || endHour > 19) return false;
+            }
+
+            // ⏰ saturday hours
+            if (day === 6) {
+                if (startHour < 9 || endHour > 17) return false;
+            }
+
+            // 🚫 sunday (extra safety even though hidden)
+            if (day === 0) return false;
+
+            return true;
         },
+
+
         
         eventDrop(info) {
             handleEventUpdate(info);
