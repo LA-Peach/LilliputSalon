@@ -263,7 +263,6 @@ public class AppointmentManagerService {
         appt.setStylistId(dto.getStylistId());
         appt.setScheduledStartDateTime(start);
         appt.setDurationMinutes(totalMinutes);
-        appt.setBusinessHours(bh);
         appt.setStatus("Scheduled");
         appt.setIsCompleted(false);
 

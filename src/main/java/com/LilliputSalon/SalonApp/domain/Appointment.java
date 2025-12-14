@@ -35,10 +35,6 @@ public class Appointment {
     @Column(name = "StylistID", nullable = false)
     private Integer stylistId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "BusinessHoursID", nullable = false)
-    private BusinessHours businessHours;
-
     @Column(name = "ScheduledStartDateTime", nullable = false)
     private LocalDateTime scheduledStartDateTime;
 
