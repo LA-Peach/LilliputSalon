@@ -21,6 +21,7 @@ import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
+import com.LilliputSalon.SalonApp.security.AppointmentAvailabilityException;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 
 import jakarta.transaction.Transactional;
@@ -245,35 +246,35 @@ public class AppointmentManagerService {
         LocalDateTime start =
             LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
-        // 1️⃣ Load services
-        List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(dto.getServiceIds());
+        List<com.LilliputSalon.SalonApp.domain.Service> services =
+            serviceRepo.findAllById(dto.getServiceIds());
+
         if (services.isEmpty()) {
             throw new RuntimeException("At least one service is required.");
         }
 
-        // 2️⃣ Calculate total duration
         int totalMinutes = services.stream()
-        	    .mapToInt(s -> s.getTypicalDurationMinutes())
-        	    .sum();
+            .mapToInt(s -> s.getTypicalDurationMinutes())
+            .sum();
 
         LocalDateTime end = start.plusMinutes(totalMinutes);
 
-        boolean overlap =
-        	    repo.countOverlappingAppointments(
-        	        dto.getStylistId(),
-        	        start,
-        	        end,
-        	        null
-        	    ) > 0;
+        // 🔒 NEW: availability + working hours
+        validateNewAppointment(dto.getStylistId(), start, end);
 
+        // 🔒 Overlap check (already correct)
+        boolean overlap =
+            repo.countOverlappingAppointments(
+                dto.getStylistId(), start, end, null
+            ) > 0;
 
         if (overlap) {
             throw new AppointmentOverlapException(
-                "This appointment overlaps an existing appointment for this stylist."
+                "This appointment overlaps an existing appointment."
             );
         }
 
-        // 3️⃣ Create appointment
+        // Save appointment
         Appointment appt = new Appointment();
         appt.setCustomerId(customerId);
         appt.setStylistId(dto.getStylistId());
@@ -284,8 +285,7 @@ public class AppointmentManagerService {
 
         repo.save(appt);
 
-        // 4️⃣ Create AppointmentService rows
-        for (com.LilliputSalon.SalonApp.domain.Service s: services) {
+        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
             AppointmentService as = new AppointmentService();
             as.setAppointment(appt);
             as.setService(s);
@@ -294,6 +294,7 @@ public class AppointmentManagerService {
             ASrepo.save(as);
         }
     }
+
 
 
 
@@ -310,14 +311,21 @@ public class AppointmentManagerService {
 	    LocalDateTime newEnd =
 	        newStart.plusMinutes(appt.getDurationMinutes());
 
-	    boolean overlap =
-	    	    repo.countOverlappingAppointments(
-	    	        appt.getStylistId(),
-	    	        newStart,
-	    	        newEnd,
-	    	        appt.getAppointmentId()
-	    	    ) > 0;
+	    // 🔒 Availability + hours + breaks
+	    validateNewAppointment(
+	        appt.getStylistId(),
+	        newStart,
+	        newEnd
+	    );
 
+	    // 🔒 Overlap check (exclude self)
+	    boolean overlap =
+	        repo.countOverlappingAppointments(
+	            appt.getStylistId(),
+	            newStart,
+	            newEnd,
+	            appt.getAppointmentId()
+	        ) > 0;
 
 	    if (overlap) {
 	        throw new AppointmentOverlapException(
@@ -330,10 +338,60 @@ public class AppointmentManagerService {
 	}
 
 
+
 	public void updateServices(Appointment appt, List<Long> serviceIds) {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	private void validateNewAppointment(
+		    Integer stylistId,
+		    LocalDateTime start,
+		    LocalDateTime end
+		) {
+		    LocalDate date = start.toLocalDate();
+
+		    Availability availability =
+		        availabilityRepo.findByUser_IdAndWorkDate(
+		            stylistId.longValue(), date
+		        );
+
+		    if (availability == null) {
+		        throw new AppointmentAvailabilityException(
+		            "Stylist is not working on this date."
+		        );
+		    }
+
+		    if (!Boolean.TRUE.equals(availability.getIsAvailable())) {
+		        throw new AppointmentAvailabilityException(
+		            "Stylist is marked unavailable on this date."
+		        );
+		    }
+
+		    LocalTime startTime = start.toLocalTime();
+		    LocalTime endTime   = end.toLocalTime();
+
+		    if (startTime.isBefore(availability.getDayStartTime())
+		        || endTime.isAfter(availability.getDayEndTime())) {
+
+		        throw new AppointmentAvailabilityException(
+		            "Appointment is outside the stylist's working hours."
+		        );
+		    }
+
+		    for (BreakTime b : availability.getBreakTimes()) {
+		        if (startTime.isBefore(b.getBreakEndTime())
+		            && endTime.isAfter(b.getBreakStartTime())) {
+
+		            throw new AppointmentAvailabilityException(
+		                "Appointment overlaps the stylist's break time."
+		            );
+		        }
+		    }
+		}
+
+
+
 
 
 

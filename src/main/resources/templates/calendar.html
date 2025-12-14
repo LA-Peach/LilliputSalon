@@ -45,7 +45,7 @@
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     
     // ========================================
     // STATE & CONFIGURATION
@@ -59,15 +59,37 @@ document.addEventListener('DOMContentLoaded', function () {
         selectedServiceIds: [],
         selectedEditServiceIds: [],
         stylistVisibility: {},
-        availabilityTogglesBuilt: false
+        availabilityTogglesBuilt: false,
+        serviceCache: null
     };
     
     state.serviceCache = null;
+    
+ // ========================================
+ // PRELOAD SERVICES
+ // ========================================
+    (async () => {
+        try {
+            const res = await fetch('/services/api');
+            state.serviceCache = await res.json();
+        } catch (e) {
+            console.error('Failed to preload services', e);
+        }
+    })();
     
     
     // ========================================
     // UTILITY FUNCTIONS
     // ========================================
+    	
+    async function loadServiceCache() {
+	    if (state.serviceCache) return state.serviceCache;
+	
+	    const res = await fetch('/services/api');
+	    state.serviceCache = await res.json();
+	    return state.serviceCache;
+	}
+
     
     function toLocalDatetimeValue(date) {
         const pad = n => String(n).padStart(2, '0');
@@ -121,6 +143,25 @@ document.addEventListener('DOMContentLoaded', function () {
     	    return start < existingEnd && end > existingStart;
     	  });
     	}
+    
+    function recomputeEditEndFromStart() {
+        if (!state.serviceCache) return;
+
+        const startVal = document.getElementById('modalStart').value;
+        if (!startVal) return;
+
+        const start = new Date(startVal);
+
+        const services = state.serviceCache
+            .flatMap(c => c.services)
+            .filter(s => state.selectedEditServiceIds.includes(s.serviceId));
+
+        if (services.length === 0) return;
+
+        updateComputedEnd(start, services);
+    }
+
+
 
     
     
@@ -206,11 +247,12 @@ document.addEventListener('DOMContentLoaded', function () {
         startInput.value = toLocalDatetimeValue(info.event.start);
         endInput.value = info.event.end ? toLocalDatetimeValue(info.event.end) : '';
         
-        const res = await fetch('/services/api');
-        const categories = await res.json();
+        const categories = state.serviceCache;
+        state.serviceCache = categories;
         const preselected = info.event.extendedProps?.serviceIds || [];
         
         renderServicesForEdit(categories, preselected);
+        recomputeEditEndFromStart();
         document.getElementById('appointmentModal').style.display = 'flex';
     }
     
@@ -230,9 +272,12 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const data = await res.json();
             
-            if (data.status !== "ok") {
+            if (!res.ok || data.status !== "ok") {
                 alert(data.message || "Move rejected");
                 info.revert();
+                return;
+            
+
             } else {
                 calendar.refetchEvents();
             }
@@ -307,8 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         const start = new Date(startVal);
-        const res = await fetch('/services/api');
-        const categories = await res.json();
+        const categories = state.serviceCache;
         const end = computeEndFromServices(start, state.selectedServiceIds, categories);
         
         if (calendar.getEvents().length === 0) {
@@ -411,18 +455,10 @@ document.addEventListener('DOMContentLoaded', function () {
         return stylists;
     }
     
-    async function loadServices() {
-    	const res = await fetch('/services/api');
-    	const services = await res.json();
-    	state.serviceCache = services;
-    	renderServices(services);
-    	
-    	if (!state.serviceCache) {
-    		  const res = await fetch('/services/api');
-    		  state.serviceCache = await res.json();
-    		}
-
+    function loadServices() {
+        renderServices(state.serviceCache);
     }
+
     
     
 
@@ -545,10 +581,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     function updateComputedEnd(start, services) {
-        const totalMinutes = services.reduce((sum, s) => sum + s.typicalDurationMinutes, 0);
+        if (!state.serviceCache) return;
+
+        const totalMinutes = services.reduce(
+            (sum, s) => sum + s.typicalDurationMinutes, 0
+        );
+
         const end = new Date(start.getTime() + totalMinutes * 60000);
         document.getElementById('modalEnd').value = toLocalDatetimeValue(end);
     }
+
     
     
     // ========================================
@@ -661,12 +703,19 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.target.id === 'createModal') closeCreateModal();
     });
     
+    //Editing the time
+    const modalStartInput = document.getElementById('modalStart');
+	modalStartInput.addEventListener('change', recomputeEditEndFromStart);
+	modalStartInput.addEventListener('input', recomputeEditEndFromStart);
+
+    
     
     // ========================================
     // INITIALIZATION
     // ========================================
     
     setupCustomerSearch();
+    await loadServiceCache();
     calendar.render();
 });
 </script>
