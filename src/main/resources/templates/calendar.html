@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="_csrf" th:content="${_csrf.token}">
-	<meta name="_csrf_header" th:content="${_csrf.headerName}">
+    <meta name="_csrf_header" th:content="${_csrf.headerName}">
     
     <title>Salon Calendar</title>
     <link rel="stylesheet" href="/css/lilliputSalon.css" />
@@ -30,27 +30,15 @@
 <main>
     <h2 style="text-align:center; margin: 20px 0;">Salon Calendar</h2>
 
-	<div style="
-	  max-width:1100px;
-	  margin:10px auto 12px;
-	  display:flex;
-	  align-items:center;
-	  justify-content:space-between;
-	  gap:12px;
-	">
-	  <!-- Left: availability toggles -->
-	  <div id="availabilityToggles">
-	    <strong>Show availability:</strong>
-	  </div>
-	
-	  <!-- Right: create button -->
-	  <button id="newApptBtn" class="btn-primary">
-	    + New Appointment
-	  </button>
-	</div>
-	
-	<div id="calendar"></div>
-
+    <div style="max-width:1100px; margin:10px auto 12px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <div id="availabilityToggles">
+            <strong>Show availability:</strong>
+        </div>
+        
+        <button id="newApptBtn" class="btn-primary">+ New Appointment</button>
+    </div>
+    
+    <div id="calendar"></div>
 </main>
 
 <!-- FullCalendar Script -->
@@ -58,772 +46,708 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-	
-	const csrfToken = document.querySelector('meta[name="_csrf"]').content;
-	const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
-	
-	const createStartInput = document.getElementById('createStart');
-	
-	let selectedServiceIds = [];
-	let selectedEditServiceIds = [];
+    
+    // ========================================
+    // STATE & CONFIGURATION
+    // ========================================
+    
+    const csrfToken = document.querySelector('meta[name="_csrf"]').content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]').content;
+    
+    const state = {
+        selectedEvent: null,
+        selectedServiceIds: [],
+        selectedEditServiceIds: [],
+        stylistVisibility: {},
+        availabilityTogglesBuilt: false
+    };
+    
+    state.serviceCache = null;
+    
+    
+    // ========================================
+    // UTILITY FUNCTIONS
+    // ========================================
+    
+    function toLocalDatetimeValue(date) {
+        const pad = n => String(n).padStart(2, '0');
+        return (
+            date.getFullYear() + '-' +
+            pad(date.getMonth() + 1) + '-' +
+            pad(date.getDate()) + 'T' +
+            pad(date.getHours()) + ':' +
+            pad(date.getMinutes())
+        );
+    }
+    
+    function computeEndFromServices(start, serviceIds, allCategories) {
+        const allServices = allCategories.flatMap(c => c.services);
+        const totalMinutes = allServices
+            .filter(s => serviceIds.includes(s.serviceId))
+            .reduce((sum, s) => sum + s.typicalDurationMinutes, 0);
+        
+        return new Date(start.getTime() + totalMinutes * 60000);
+    }
+    
+    function hasOverlap({ stylistId, start, end }) {
+    	  const events = calendar.getEvents();
+    	  const allServices = state.serviceCache.flatMap(c => c.services);
 
+    	  return events.some(evt => {
+    	    if (evt.display === 'background') return false;
 
-	
-	function toLocalDatetimeValue(date) {
-		  const pad = n => String(n).padStart(2, '0');
-		  return (
-		    date.getFullYear() + '-' +
-		    pad(date.getMonth() + 1) + '-' +
-		    pad(date.getDate()) + 'T' +
-		    pad(date.getHours()) + ':' +
-		    pad(date.getMinutes())
-		  );
-	}
+    	    // 🔒 stylist comparison (force number)
+    	    if (Number(evt.extendedProps?.stylistId) !== Number(stylistId)) return false;
 
-	
-	let availabilityTogglesBuilt = false;
-	
-	const stylistVisibility = {};
+    	    if (!evt.start) return false;
 
+    	    const existingStart = evt.start;
+
+    	    // ✅ COMPUTE EXISTING END FROM SERVICES
+    	    let existingEnd = evt.end;
+
+    	    if (!existingEnd) {
+    	      const serviceIds = evt.extendedProps?.serviceIds || [];
+
+    	      const totalMinutes = allServices
+    	        .filter(s => serviceIds.includes(s.serviceId))
+    	        .reduce((sum, s) => sum + s.typicalDurationMinutes, 0);
+
+    	      if (!totalMinutes) return false;
+
+    	      existingEnd = new Date(existingStart.getTime() + totalMinutes * 60000);
+    	    }
+
+    	    return start < existingEnd && end > existingStart;
+    	  });
+    	}
+
+    
+    
+    // ========================================
+    // CALENDAR INITIALIZATION
+    // ========================================
+    
     const calendarEl = document.getElementById('calendar');
-
     const calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
-
+        
         headerToolbar: {
-            left:   'prev,next today',
+            left: 'prev,next today',
             center: 'title',
-            right:  'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
         },
-
+        
         businessHours: [
             { daysOfWeek: [1,2,3,4,5], startTime: '09:00', endTime: '19:00' },
             { daysOfWeek: [6], startTime: '09:00', endTime: '17:00' }
         ],
-
+        
         slotMinTime: '09:00:00',
         slotMaxTime: '19:00:00',
-
+        
         editable: true,
         droppable: true,
         eventResizableFromStart: false,
         eventDurationEditable: false,
-    
-
-
+        eventTextColor: 'black',
+        
         eventSources: [
-
-            // Appointments (already color-coded by backend)
+            { url: '/calendar/events' },
             {
-                url: '/calendar/events'
-            },
-
-            // Shifts (availability)
-            {
-            	  url: '/calendar/shifts',
-            	  display: 'background', 
-            	  editable: false,
-            	  success(events) {
-            	    if (!availabilityTogglesBuilt) {
-            	      buildAvailabilityToggles(events);
-            	      availabilityTogglesBuilt = true;
-            	    }
-            	  }
-            	}
-
-
-
-
+                url: '/calendar/shifts',
+                display: 'background',
+                editable: false,
+                success(events) {
+                    if (!state.availabilityTogglesBuilt) {
+                        buildAvailabilityToggles(events);
+                        state.availabilityTogglesBuilt = true;
+                    }
+                }
+            }
         ],
         
         eventDidMount(info) {
             const props = info.event.extendedProps;
-
-            // reset in case FC reuses DOM nodes
             info.el.style.display = '';
-
+            
             if (props?.type === 'shift' || props?.type === 'break') {
-              if (stylistVisibility[props.stylistId] === false) {
-                info.el.style.display = 'none';
-              }
+                if (state.stylistVisibility[props.stylistId] === false) {
+                    info.el.style.display = 'none';
+                }
             }
-          },
-
-        eventTextColor: 'black',
+        },
         
         eventAllow(dropInfo, draggedEvent) {
-        	  // Only block completed appointments
-        	  return draggedEvent.extendedProps?.status !== 'Completed';
-        	},
-
-
-
-
+            return draggedEvent.extendedProps?.status !== 'Completed';
+        },
+        
         eventDrop(info) {
-            updateEvent(info);
+            handleEventUpdate(info);
         },
-    
-        eventClick: async function (info) {
-        	  if (info.event.display === 'background') return;
-
-        	  selectedEvent = info.event;
-
-        	  const startInput = document.getElementById('modalStart');
-        	  const endInput   = document.getElementById('modalEnd');
-
-        	  startInput.value = toLocalDatetimeValue(info.event.start);
-
-        	  endInput.value = info.event.end
-        	    ? toLocalDatetimeValue(info.event.end)
-        	    : '';
-
-
-        	  // 🔥 LOAD SERVICES
-        	  const res = await fetch('/services/api');
-        	  const categories = await res.json();
-
-        	  const preselected =
-        	    info.event.extendedProps?.serviceIds || [];
-
-        	  renderServicesForEdit(categories, preselected);
-
-        	  document.getElementById('appointmentModal').style.display = 'flex';
-        	},
-
-
-        	
-
+        
+        eventClick: async function(info) {
+            if (info.event.display === 'background') return;
+            await handleEventClick(info);
+        }
     });
     
-    const createModal = document.getElementById('createModal');
-
-    function openCreateModal() {
-    	  const now = new Date();
-
-    	  const createStartInput = document.getElementById('createStart');
-
+    
+    // ========================================
+    // EVENT HANDLERS
+    // ========================================
+    
+    async function handleEventClick(info) {
+        state.selectedEvent = info.event;
+        
+        const startInput = document.getElementById('modalStart');
+        const endInput = document.getElementById('modalEnd');
+        
+        startInput.value = toLocalDatetimeValue(info.event.start);
+        endInput.value = info.event.end ? toLocalDatetimeValue(info.event.end) : '';
+        
+        const res = await fetch('/services/api');
+        const categories = await res.json();
+        const preselected = info.event.extendedProps?.serviceIds || [];
+        
+        renderServicesForEdit(categories, preselected);
+        document.getElementById('appointmentModal').style.display = 'flex';
     }
-
-
-
-    function closeCreateModal() {
-      createModal.style.display = 'none';
-      document.getElementById('createStart').value = '';
+    
+    async function handleEventUpdate(info) {
+        try {
+            const res = await fetch('/calendar/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    [csrfHeader]: csrfToken
+                },
+                body: JSON.stringify({
+                    id: info.event.id,
+                    start: info.event.start.toISOString()
+                })
+            });
+            
+            const data = await res.json();
+            
+            if (data.status !== "ok") {
+                alert(data.message || "Move rejected");
+                info.revert();
+            } else {
+                calendar.refetchEvents();
+            }
+        } catch (err) {
+            console.error(err);
+            info.revert();
+        }
     }
+    
+    async function handleSaveEdit() {
+        const start = document.getElementById('modalStart').value;
+        const end = document.getElementById('modalEnd').value;
+        
+        if (!start || !end) {
+            alert('Start and end required');
+            return;
+        }
+        
+        if (new Date(end) <= new Date(start)) {
+            alert('End time must be after start time');
+            return;
+        }
+        
+        const res = await fetch('/calendar/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({
+                id: state.selectedEvent.id,
+                start: new Date(start).toISOString(),
+                serviceIds: state.selectedEditServiceIds
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (data.status !== 'ok') {
+            alert(data.message || 'Update failed');
+            return;
+        }
+        
+        calendar.refetchEvents();
+        closeEditModal();
+    }
+    
+    async function handleDeleteAppointment() {
+        if (!state.selectedEvent) return;
+        if (!confirm('Delete this appointment?')) return;
+        
+        const res = await fetch(`/appointments/delete/${state.selectedEvent.id}`, {
+            method: 'POST',
+            headers: { [csrfHeader]: csrfToken }
+        });
+        
+        if (res.ok) {
+            state.selectedEvent.remove();
+            document.getElementById('appointmentModal').style.display = 'none';
+        } else {
+            alert('Failed to delete appointment');
+        }
+    }
+    
+    async function handleCreateAppointment() {
+        const stylistId = Number(document.getElementById('createStylist').value);
+        const startVal = document.getElementById('createStart').value;
+        
+        if (!stylistId || !startVal || state.selectedServiceIds.length === 0) {
+            alert('Stylist, start time, and at least one service are required.');
+            return;
+        }
+        
+        const start = new Date(startVal);
+        const res = await fetch('/services/api');
+        const categories = await res.json();
+        const end = computeEndFromServices(start, state.selectedServiceIds, categories);
+        
+        if (calendar.getEvents().length === 0) {
+        	  await calendar.refetchEvents();
+        	}
 
-    createModal.addEventListener('click', e => {
-      if (e.target === createModal) closeCreateModal();
-    });
-
-    document.getElementById('createCancelBtn')
-      .addEventListener('click', closeCreateModal);
-
+        
+        if (hasOverlap({ stylistId, start, end })) {
+            alert('This appointment overlaps an existing appointment for this stylist.');
+            return;
+        }
+        
+        const response = await fetch('/appointments/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                [csrfHeader]: csrfToken
+            },
+            body: JSON.stringify({
+                stylistId,
+                start: start.toISOString(),
+                serviceIds: state.selectedServiceIds,
+                customerEmail: document.getElementById('customerEmail').value,
+                guestFirstName: document.getElementById('guestFirstName').value,
+                guestLastName: document.getElementById('guestLastName').value,
+                guestPhone: document.getElementById('guestPhone').value
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status !== 'ok') {
+            alert(data.message || 'Create failed');
+            return;
+        }
+        
+        calendar.refetchEvents();
+        closeCreateModal();
+    }
     
     
-    let selectedEvent = null;
-
-    const modal = document.getElementById('appointmentModal');
-    
-    modal.addEventListener('click', (e) => {
-    	  if (e.target === modal) {
-    	    modal.style.display = 'none';
-    	    selectedEvent = null;
-    	  }
-    	});
-
-    
-    const modalTitle = document.getElementById('modalTitle');
-    const modalTime = document.getElementById('modalTime');
-
-    document.getElementById('closeBtn').addEventListener('click', () => {
-    	  document.getElementById('appointmentModal').style.display = 'none';
-    	  selectedEvent = null;
-    	  document.getElementById('modalStart').value = '';
-    	  document.getElementById('modalEnd').value = '';
-
-    	});
-    
-    document.getElementById('newApptBtn')
-    .addEventListener('click', async () => {
-
-      await loadStylists();
-      await loadServices();
-
-      createModal.style.display = 'flex';
-
-      setTimeout(() => {
-        const now = new Date();
-
-        document.getElementById('createStart').value =
-        	toLocalDatetimeValue(now);
-      }, 0);
-  });
-
-
-
-
-    document.getElementById('deleteBtn').onclick = async () => {
-      if (!selectedEvent) return;
-
-      if (!confirm('Delete this appointment?')) return;
-
-      const res = await fetch(`/appointments/delete/${selectedEvent.id}`, {
-    	  method: 'POST',
-    	  headers: {
-    	    [csrfHeader]: csrfToken
-    	  }
-    	});
-
-
-      if (res.ok) {
-        selectedEvent.remove(); // remove from calendar
-        modal.style.display = 'none';
-      } else {
-        alert('Failed to delete appointment');
-      }
-    };
-    
-    document.getElementById('saveBtn').addEventListener('click', async () => {
-    	  const start = document.getElementById('modalStart').value;
-    	  const end   = document.getElementById('modalEnd').value;
-
-    	  if (!start || !end) {
-    	    alert('Start and end required');
-    	    return;
-    	  }
-    	  
-    	  if (new Date(end) <= new Date(start)) {
-    		  alert('End time must be after start time');
-    		  return;
-    		}
-
-
-    	 
-
-    	  // ✏️ EDIT MODE (existing logic)
-    	  const res = await fetch('/calendar/update', {
-    	    method: 'POST',
-    	    headers: {
-    	      'Content-Type': 'application/json',
-    	      [csrfHeader]: csrfToken
-    	    },
-    	    body: JSON.stringify({
-    	    	  id: selectedEvent.id,
-    	    	  start: new Date(start).toISOString(),
-    	    	  serviceIds: selectedEditServiceIds
-    	    	})
-
-    	  });
-
-    	  const data = await res.json();
-    	  if (data.status !== 'ok') {
-    	    alert(data.message || 'Update failed');
-    	    return;
-    	  }
-
-    	  calendar.refetchEvents();
-    	  closeModal();
-    	});
-
-    async function loadStylists() {
-    	  const res = await fetch('/web/stylists');
-    	  const stylists = await res.json();
-
-    	  const select = document.getElementById('createStylist');
-    	  select.innerHTML = '<option value="">Select stylist</option>';
-
-    	  stylists.forEach(s => {
-    	    const opt = document.createElement('option');
-    	    opt.value = s.userId;              // ✅ FIX HERE
-    	    opt.textContent = s.firstName;
-    	    select.appendChild(opt);
-    	  });
-
-    	  return stylists;
-    	}
-    
-    async function loadServices() {
-    	  const res = await fetch('/services/api');
-    	  const services = await res.json();
-    	  renderServices(services);
-    	}
-
-
-    document.getElementById('createSaveBtn')
-    .addEventListener('click', async () => {
-
-      const stylistId = Number(document.getElementById('createStylist').value);
-      const start = createStartInput.value;
-
-      const customerEmail  = document.getElementById('customerEmail').value;
-      const guestFirstName = document.getElementById('guestFirstName').value;
-      const guestLastName  = document.getElementById('guestLastName').value;
-      const guestPhone     = document.getElementById('guestPhone').value;
-
-      if (!stylistId || !start || selectedServiceIds.length === 0) {
-        alert('Stylist, start time, and at least one service are required.');
-        return;
-      }
-
-      const res = await fetch('/appointments/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          [csrfHeader]: csrfToken
-        },
-        body: JSON.stringify({
-          stylistId,
-          start: new Date(start).toISOString(),
-          serviceIds: selectedServiceIds,
-          customerEmail,
-          guestFirstName,
-          guestLastName,
-          guestPhone
-        })
-      });
-
-      const data = await res.json();
-
-      if (data.status !== 'ok') {
-        alert(data.message || 'Create failed');
-        return;
-      }
-
-      calendar.refetchEvents();
-      closeCreateModal();
-    });
-
-
-
+    // ========================================
+    // UI MANAGEMENT
+    // ========================================
     
     function buildAvailabilityToggles(events) {
-    	  const container = document.getElementById('availabilityToggles');
-    	  container.innerHTML = '<strong>Show availability:</strong>';
-
-    	  const seen = new Set();
-
-    	  // 🔑 FIRST PASS: initialize visibility
-    	  events.forEach(e => {
-    	    const sid = e.extendedProps?.stylistId;
-    	    if (!sid) return;
-
-    	    if (stylistVisibility[sid] === undefined) {
-    	      stylistVisibility[sid] = false; // default = hidden
-    	    }
-    	  });
-
-    	  // 🔑 SECOND PASS: build checkboxes
-    	  events.forEach(e => {
-    	    const props = e.extendedProps;
-    	    const sid = props?.stylistId;
-    	    if (!sid || seen.has(sid)) return;
-
-    	    seen.add(sid);
-
-    	    const label = document.createElement('label');
-    	    label.style.marginRight = '12px';
-
-    	    const cb = document.createElement('input');
-    	    cb.type = 'checkbox';
-    	    cb.checked = false; // 🔥 force unchecked on load
-
-    	    cb.addEventListener('change', () => {
-    	      stylistVisibility[sid] = cb.checked;
-    	      calendar.refetchEvents();
-    	    });
-
-    	    label.appendChild(cb);
-    	    label.append(` ${props.stylistName}`);
-    	    container.appendChild(label);
-    	  });
-    	}
-
-
-
-    function updateEvent(info) {
-    	  fetch('/calendar/update', {
-    	    method: 'POST',
-    	    headers: {
-    	      'Content-Type': 'application/json',
-    	      [csrfHeader]: csrfToken
-    	    },
-    	    body: JSON.stringify({
-    	      id: info.event.id,
-    	      start: info.event.start.toISOString()
-    	      // ❌ DO NOT SEND end
-    	    })
-    	  })
-    	  .then(res => res.json())
-    	  .then(data => {
-    	    if (data.status !== "ok") {
-    	      alert(data.message || "Move rejected");
-    	      info.revert();
-    	    } else {
-    	      calendar.refetchEvents();
-    	    }
-    	  })
-    	  .catch(err => {
-    	    console.error(err);
-    	    info.revert();
-    	  });
-    	}
-
+        const container = document.getElementById('availabilityToggles');
+        container.innerHTML = '<strong>Show availability:</strong>';
+        const seen = new Set();
+        
+        // Initialize visibility
+        events.forEach(e => {
+            const sid = e.extendedProps?.stylistId;
+            if (!sid) return;
+            if (state.stylistVisibility[sid] === undefined) {
+                state.stylistVisibility[sid] = false;
+            }
+        });
+        
+        // Build checkboxes
+        events.forEach(e => {
+            const props = e.extendedProps;
+            const sid = props?.stylistId;
+            if (!sid || seen.has(sid)) return;
+            
+            seen.add(sid);
+            
+            const label = document.createElement('label');
+            label.style.marginRight = '12px';
+            
+            const cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.checked = false;
+            
+            cb.addEventListener('change', () => {
+                state.stylistVisibility[sid] = cb.checked;
+                calendar.refetchEvents();
+            });
+            
+            label.appendChild(cb);
+            label.append(` ${props.stylistName}`);
+            container.appendChild(label);
+        });
+    }
     
-    function openEditModal(dateStr) {
-    	  selectedEvent = null;
-    	  isCreateMode = true;
-
-    	  const modal = document.getElementById('appointmentModal');
-    	  const modalStartInput = document.getElementById('modalStart');
-    	  const modalEndInput   = document.getElementById('modalEnd');
-
-    	  function ensureEditEndAfterStart() {
-    	    if (!modalStartInput.value) return;
-
-    	    const start = new Date(modalStartInput.value);
-    	    let end = modalEndInput.value
-    	      ? new Date(modalEndInput.value)
-    	      : null;
-
-    	    if (!end || end <= start) {
-    	      const fixedEnd = new Date(start.getTime() + 30 * 60 * 1000);
-    	      modalEndInput.value = toLocalDatetimeValue(fixedEnd);
-    	    }
-    	  }
-
-    	  modalStartInput.addEventListener('change', ensureEditEndAfterStart);
-    	  modalEndInput.addEventListener('change', ensureEditEndAfterStart);
-
-
-
-    	  // Prefill start time
-    	  startInput.value = dateStr.slice(0, 16);
-
-    	  // Optional: default duration (1 hour)
-    	  const startDate = new Date(dateStr);
-    	  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
-    	  endInput.value = toLocalDatetimeValue(endDate);
-
-    	  document.getElementById('modalTitle').textContent = 'New Appointment';
-
-    	  // Enable inputs
-    	  startInput.disabled = false;
-    	  endInput.disabled   = false;
-    	  document.getElementById('saveBtn').disabled = false;
-    	  document.getElementById('deleteBtn').style.display = 'none';
-
-    	  modal.style.display = 'flex';
-    	}
+    async function loadStylists() {
+        const res = await fetch('/web/stylists');
+        const stylists = await res.json();
+        
+        const select = document.getElementById('createStylist');
+        select.innerHTML = '<option value="">Select stylist</option>';
+        
+        stylists.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.userId;
+            opt.textContent = s.firstName;
+            select.appendChild(opt);
+        });
+        
+        return stylists;
+    }
     
-    function updateComputedEnd(start, services) {
-    	  const totalMinutes = services.reduce(
-    	    (sum, s) => sum + s.typicalDurationMinutes, 0
-    	  );
+    async function loadServices() {
+    	const res = await fetch('/services/api');
+    	const services = await res.json();
+    	state.serviceCache = services;
+    	renderServices(services);
+    	
+    	if (!state.serviceCache) {
+    		  const res = await fetch('/services/api');
+    		  state.serviceCache = await res.json();
+    		}
 
-    	  const end = new Date(start.getTime() + totalMinutes * 60000);
-    	  document.getElementById('modalEnd').value =
-    		  toLocalDatetimeValue(end);
+    }
+    
+    
 
-    	}
     
     function renderServices(categories) {
-    	  const container = document.getElementById('serviceList');
-    	  container.innerHTML = '';
-    	  selectedServiceIds = [];
-
-    	  categories.forEach(cat => {
-    	    if (!cat.services || cat.services.length === 0) return;
-
-    	    const catDiv = document.createElement('div');
-    	    catDiv.className = 'service-category';
-
-    	    const title = document.createElement('h4');
-    	    title.textContent = cat.categoryName;
-    	    catDiv.appendChild(title);
-
-    	    const grid = document.createElement('div');
-    	    grid.className = 'service-grid';
-
-    	    cat.services.forEach(svc => {
-    	      const btn = document.createElement('button');
-    	      btn.type = 'button';
-    	      btn.className = 'service-btn';
-    	      btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
-
-    	      btn.addEventListener('click', () => {
-    	        btn.classList.toggle('selected');
-
-    	        if (btn.classList.contains('selected')) {
-    	          selectedServiceIds.push(svc.serviceId);
-    	        } else {
-    	          selectedServiceIds =
-    	            selectedServiceIds.filter(id => id !== svc.serviceId);
-    	        }
-
-    	        // auto-update end time
-    	        const startVal = createStartInput.value;
-    	        if (startVal) {
-    	          updateComputedEnd(
-    	            new Date(startVal),
-    	            cat.services.filter(s =>
-    	              selectedServiceIds.includes(s.serviceId)
-    	            )
-    	          );
-    	        }
-    	      });
-
-    	      grid.appendChild(btn);
-    	    });
-
-    	    catDiv.appendChild(grid);
-    	    container.appendChild(catDiv);
-    	  });
-    	}
+        const container = document.getElementById('serviceList');
+        container.innerHTML = '';
+        state.selectedServiceIds = [];
+        
+        categories.forEach(cat => {
+            if (!cat.services || cat.services.length === 0) return;
+            
+            const catDiv = document.createElement('div');
+            catDiv.className = 'service-category';
+            
+            const title = document.createElement('h4');
+            title.textContent = cat.categoryName;
+            catDiv.appendChild(title);
+            
+            const grid = document.createElement('div');
+            grid.className = 'service-grid';
+            
+            cat.services.forEach(svc => {
+                const btn = createServiceButton(svc, () => {
+                    const startVal = document.getElementById('createStart').value;
+                    if (startVal) {
+                        updateComputedEnd(
+                            new Date(startVal),
+                            cat.services.filter(s => state.selectedServiceIds.includes(s.serviceId))
+                        );
+                    }
+                });
+                grid.appendChild(btn);
+            });
+            
+            catDiv.appendChild(grid);
+            container.appendChild(catDiv);
+        });
+    }
     
     function renderServicesForEdit(categories, preselectedIds) {
-    	  const container = document.getElementById('editServiceList');
-    	  container.innerHTML = '';
-    	  selectedEditServiceIds = [...preselectedIds];
-
-    	  categories.forEach(cat => {
-    	    if (!cat.services || cat.services.length === 0) return;
-
-    	    const catDiv = document.createElement('div');
-    	    catDiv.className = 'service-category';
-
-    	    const title = document.createElement('h4');
-    	    title.textContent = cat.categoryName;
-    	    catDiv.appendChild(title);
-
-    	    const grid = document.createElement('div');
-    	    grid.className = 'service-grid';
-
-    	    cat.services.forEach(svc => {
-    	      const btn = document.createElement('button');
-    	      btn.type = 'button';
-    	      btn.className = 'service-btn';
-    	      btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
-
-    	      if (preselectedIds.includes(svc.serviceId)) {
-    	        btn.classList.add('selected');
-    	      }
-
-    	      btn.addEventListener('click', () => {
-    	        btn.classList.toggle('selected');
-
-    	        if (btn.classList.contains('selected')) {
-    	          selectedEditServiceIds.push(svc.serviceId);
-    	        } else {
-    	          selectedEditServiceIds =
-    	            selectedEditServiceIds.filter(id => id !== svc.serviceId);
-    	        }
-
-    	        const startVal = document.getElementById('modalStart').value;
-    	        if (startVal) {
-    	          updateComputedEnd(
-    	            new Date(startVal),
-    	            categories.flatMap(c => c.services)
-    	              .filter(s => selectedEditServiceIds.includes(s.serviceId))
-    	          );
-    	        }
-    	      });
-
-    	      grid.appendChild(btn);
-    	    });
-
-    	    catDiv.appendChild(grid);
-    	    container.appendChild(catDiv);
-    	  });
-    	}
-
-
-
-    
-    function closeModal() {
-    	  document.getElementById('appointmentModal').style.display = 'none';
-    	  selectedEvent = null;
-    	  isCreateMode = false;
-
-    	  document.getElementById('modalStart').value = '';
-    	  document.getElementById('modalEnd').value = '';
-
-    	  
-    	  calendar.refetchEvents();
-    	}
-    
-    const emailInput = document.getElementById('customerEmail');
-    const resultsBox = document.getElementById('customerSearchResults');
-
-    let searchTimer = null;
-
-    emailInput.addEventListener('input', () => {
-      const q = emailInput.value.trim();
-
-      clearTimeout(searchTimer);
-
-      if (q.length < 2) {
-        resultsBox.style.display = 'none';
-        resultsBox.innerHTML = '';
-        return;
-      }
-
-      searchTimer = setTimeout(async () => {
-        const res = await fetch(`/customers/search?q=${encodeURIComponent(q)}`);
-        const customers = await res.json();
-
-        resultsBox.innerHTML = '';
-
-        if (customers.length === 0) {
-          resultsBox.style.display = 'none';
-          return;
-        }
-
-        customers.forEach(c => {
-          const div = document.createElement('div');
-          div.textContent = `${c.email} (${c.firstName} ${c.lastName})`;
-          div.style.padding = '8px 12px';
-          div.style.cursor = 'pointer';
-
-          div.textContent = `${c.email} (${c.firstName} ${c.lastName})`;
-
-          div.addEventListener('click', () => {
-            // email
-            emailInput.value = c.email;
-
-            // autofill customer info
-            document.getElementById('guestFirstName').value = c.firstName || '';
-            document.getElementById('guestLastName').value  = c.lastName  || '';
-            document.getElementById('guestPhone').value     = c.phone     || '';
-
-            resultsBox.style.display = 'none';
-          });
-
-
-          resultsBox.appendChild(div);
+        const container = document.getElementById('editServiceList');
+        container.innerHTML = '';
+        state.selectedEditServiceIds = [...preselectedIds];
+        
+        categories.forEach(cat => {
+            if (!cat.services || cat.services.length === 0) return;
+            
+            const catDiv = document.createElement('div');
+            catDiv.className = 'service-category';
+            
+            const title = document.createElement('h4');
+            title.textContent = cat.categoryName;
+            catDiv.appendChild(title);
+            
+            const grid = document.createElement('div');
+            grid.className = 'service-grid';
+            
+            cat.services.forEach(svc => {
+                const btn = createEditServiceButton(svc, preselectedIds, categories);
+                grid.appendChild(btn);
+            });
+            
+            catDiv.appendChild(grid);
+            container.appendChild(catDiv);
         });
-
-        resultsBox.style.display = 'block';
-      }, 250); // debounce
+    }
+    
+    function createServiceButton(svc, onUpdate) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'service-btn';
+        btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
+        
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('selected');
+            
+            if (btn.classList.contains('selected')) {
+                state.selectedServiceIds.push(svc.serviceId);
+            } else {
+                state.selectedServiceIds = state.selectedServiceIds.filter(id => id !== svc.serviceId);
+            }
+            
+            onUpdate();
+        });
+        
+        return btn;
+    }
+    
+    function createEditServiceButton(svc, preselectedIds, categories) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'service-btn';
+        btn.textContent = `${svc.name} (${svc.typicalDurationMinutes} min)`;
+        
+        if (preselectedIds.includes(svc.serviceId)) {
+            btn.classList.add('selected');
+        }
+        
+        btn.addEventListener('click', () => {
+            btn.classList.toggle('selected');
+            
+            if (btn.classList.contains('selected')) {
+                state.selectedEditServiceIds.push(svc.serviceId);
+            } else {
+                state.selectedEditServiceIds = state.selectedEditServiceIds.filter(id => id !== svc.serviceId);
+            }
+            
+            const startVal = document.getElementById('modalStart').value;
+            if (startVal) {
+                updateComputedEnd(
+                    new Date(startVal),
+                    categories.flatMap(c => c.services)
+                        .filter(s => state.selectedEditServiceIds.includes(s.serviceId))
+                );
+            }
+        });
+        
+        return btn;
+    }
+    
+    function updateComputedEnd(start, services) {
+        const totalMinutes = services.reduce((sum, s) => sum + s.typicalDurationMinutes, 0);
+        const end = new Date(start.getTime() + totalMinutes * 60000);
+        document.getElementById('modalEnd').value = toLocalDatetimeValue(end);
+    }
+    
+    
+    // ========================================
+    // MODAL MANAGEMENT
+    // ========================================
+    
+    async function openCreateModal() {
+        await loadStylists();
+        await loadServices();
+        
+        document.getElementById('createModal').style.display = 'flex';
+        
+        setTimeout(() => {
+            const now = new Date();
+            document.getElementById('createStart').value = toLocalDatetimeValue(now);
+        }, 0);
+    }
+    
+    function closeCreateModal() {
+        document.getElementById('createModal').style.display = 'none';
+        document.getElementById('createStart').value = '';
+        state.selectedServiceIds = [];
+    }
+    
+    function closeEditModal() {
+        document.getElementById('appointmentModal').style.display = 'none';
+        state.selectedEvent = null;
+        document.getElementById('modalStart').value = '';
+        document.getElementById('modalEnd').value = '';
+        calendar.refetchEvents();
+    }
+    
+    
+    // ========================================
+    // CUSTOMER SEARCH
+    // ========================================
+    
+    function setupCustomerSearch() {
+        const emailInput = document.getElementById('customerEmail');
+        const resultsBox = document.getElementById('customerSearchResults');
+        let searchTimer = null;
+        
+        emailInput.addEventListener('input', () => {
+            const q = emailInput.value.trim();
+            
+            clearTimeout(searchTimer);
+            
+            if (q.length < 2) {
+                resultsBox.style.display = 'none';
+                resultsBox.innerHTML = '';
+                return;
+            }
+            
+            searchTimer = setTimeout(async () => {
+                const res = await fetch(`/customers/search?q=${encodeURIComponent(q)}`);
+                const customers = await res.json();
+                
+                resultsBox.innerHTML = '';
+                
+                if (customers.length === 0) {
+                    resultsBox.style.display = 'none';
+                    return;
+                }
+                
+                customers.forEach(c => {
+                    const div = document.createElement('div');
+                    div.textContent = `${c.email} (${c.firstName} ${c.lastName})`;
+                    div.style.padding = '8px 12px';
+                    div.style.cursor = 'pointer';
+                    
+                    div.addEventListener('click', () => {
+                        emailInput.value = c.email;
+                        document.getElementById('guestFirstName').value = c.firstName || '';
+                        document.getElementById('guestLastName').value = c.lastName || '';
+                        document.getElementById('guestPhone').value = c.phone || '';
+                        resultsBox.style.display = 'none';
+                    });
+                    
+                    resultsBox.appendChild(div);
+                });
+                
+                resultsBox.style.display = 'block';
+            }, 250);
+        });
+    }
+    
+    
+    // ========================================
+    // EVENT LISTENERS
+    // ========================================
+    
+    // New Appointment Button
+    document.getElementById('newApptBtn').addEventListener('click', openCreateModal);
+    
+    // Edit Modal Buttons
+    document.getElementById('saveBtn').addEventListener('click', handleSaveEdit);
+    document.getElementById('deleteBtn').addEventListener('click', handleDeleteAppointment);
+    document.getElementById('closeBtn').addEventListener('click', closeEditModal);
+    
+    // Create Modal Buttons
+    document.getElementById('createSaveBtn').addEventListener('click', handleCreateAppointment);
+    document.getElementById('createCancelBtn').addEventListener('click', closeCreateModal);
+    
+    // Modal Click Outside
+    document.getElementById('appointmentModal').addEventListener('click', (e) => {
+        if (e.target.id === 'appointmentModal') closeEditModal();
     });
-
     
-
+    document.getElementById('createModal').addEventListener('click', (e) => {
+        if (e.target.id === 'createModal') closeCreateModal();
+    });
     
-
-
+    
+    // ========================================
+    // INITIALIZATION
+    // ========================================
+    
+    setupCustomerSearch();
     calendar.render();
 });
-
-
-
-
 </script>
 
-
-
+<!-- Edit Modal -->
 <div id="appointmentModal" class="modal-overlay" style="display:none;">
-  <div class="modal-card glass-card">
-    <h3 id="modalTitle"></h3>
-    
-    <div class="field-group">
-	  <label>Services</label>
-	  <div id="editServiceList"></div>
-	</div>
-    
-
-    <div class="field-group">
-      <label>Start</label>
-      <input type="datetime-local" id="modalStart">
+    <div class="modal-card glass-card">
+        <h3 id="modalTitle"></h3>
+        
+        <div class="field-group">
+            <label>Services</label>
+            <div id="editServiceList"></div>
+        </div>
+        
+        <div class="field-group">
+            <label>Start</label>
+            <input type="datetime-local" id="modalStart">
+        </div>
+        
+        <div class="field-group">
+            <label>End</label>
+            <input type="datetime-local" id="modalEnd" disabled>
+        </div>
+        
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+            <button id="saveBtn" class="btn-primary" type="button">Save</button>
+            <button id="deleteBtn" class="btn-danger" type="button">Delete</button>
+            <button id="closeBtn" class="btn-secondary" type="button">Close</button>
+        </div>
     </div>
-
-    <div class="field-group">
-      <label>End</label>
-      <input type="datetime-local" id="modalEnd" disabled>
-    </div>
-
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-      <button id="saveBtn" class="btn-primary" type="button">Save</button>
-      <button id="deleteBtn" class="btn-danger" type="button">Delete</button>
-      <button id="closeBtn" class="btn-secondary" type="button">Close</button>
-    </div>
-  </div>
 </div>
 
+<!-- Create Modal -->
 <div id="createModal" class="modal-overlay" style="display:none;">
-  <div class="modal-card glass-card">
-    <h3>New Appointment</h3>
-    
-    <div class="field-group">
-	  <label>Services</label>
-	  <div id="serviceList"></div>
-	</div>
-    
-
-    <div class="field-group">
-      <label>Stylist</label>
-      <select id="createStylist">
-		  <option value="">Select stylist</option>
-		</select>
-
+    <div class="modal-card glass-card">
+        <h3>New Appointment</h3>
+        
+        <div class="field-group">
+            <label>Services</label>
+            <div id="serviceList"></div>
+        </div>
+        
+        <div class="field-group">
+            <label>Stylist</label>
+            <select id="createStylist">
+                <option value="">Select stylist</option>
+            </select>
+        </div>
+        
+        <div class="field-group" style="position:relative;">
+            <label>Customer Email</label>
+            <input type="email" id="customerEmail" placeholder="Search or enter email" autocomplete="off">
+            <div id="customerSearchResults" style="position:absolute; top:100%; left:0; right:0; background:white; border-radius:8px; box-shadow:0 8px 20px rgba(0,0,0,.15); z-index:1000; display:none; max-height:180px; overflow-y:auto;"></div>
+        </div>
+        
+        <div class="field-group">
+            <label>First Name</label>
+            <input type="text" id="guestFirstName">
+        </div>
+        
+        <div class="field-group">
+            <label>Last Name</label>
+            <input type="text" id="guestLastName">
+        </div>
+        
+        <div class="field-group">
+            <label>Phone</label>
+            <input type="text" id="guestPhone">
+        </div>
+        
+        <div class="field-group">
+            <label>Start</label>
+            <input type="datetime-local" id="createStart">
+        </div>
+        
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
+            <button id="createSaveBtn" class="btn-primary" type="button">Create</button>
+            <button id="createCancelBtn" class="btn-secondary" type="button">Cancel</button>
+        </div>
     </div>
-    
-    <div class="field-group" style="position:relative;">
-	  <label>Customer Email</label>
-	  <input
-	    type="email"
-	    id="customerEmail"
-	    placeholder="Search or enter email"
-	    autocomplete="off"
-	  >
-	
-	  <div id="customerSearchResults"
-	       style="
-	         position:absolute;
-	         top:100%;
-	         left:0;
-	         right:0;
-	         background:white;
-	         border-radius:8px;
-	         box-shadow:0 8px 20px rgba(0,0,0,.15);
-	         z-index:1000;
-	         display:none;
-	         max-height:180px;
-	         overflow-y:auto;
-	       ">
-	  </div>
-	</div>
-
-	
-	<div class="field-group">
-	  <label>First Name</label>
-	  <input type="text" id="guestFirstName">
-	</div>
-	
-	<div class="field-group">
-	  <label>Last Name</label>
-	  <input type="text" id="guestLastName">
-	</div>
-	
-	<div class="field-group">
-	  <label>Phone</label>
-	  <input type="text" id="guestPhone">
-	</div>
-    
-
-    <div class="field-group">
-      <label>Start</label>
-      <input type="datetime-local" id="createStart">
-    </div>
-
-
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-      <button id="createSaveBtn" class="btn-primary" type="button">Create</button>
-      <button id="createCancelBtn" class="btn-secondary" type="button">Cancel</button>
-    </div>
-  </div>
 </div>
-
-
 
 </body>
 </html>

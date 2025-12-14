@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -69,11 +72,6 @@ public class Appointment {
 
 
     public int getTotalDurationMinutes() {
-        return durationMinutes != null ? durationMinutes : 0;
-    }
-
+        return durationMinutes != null ? durationMinutes : 0;}
     
-    
-
-
 }

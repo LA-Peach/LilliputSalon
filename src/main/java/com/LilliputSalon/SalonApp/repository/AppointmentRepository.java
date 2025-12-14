@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
@@ -44,6 +45,22 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    left join fetch aps.service
     	""")
     	List<Appointment> findAllWithServices();
+
+    @Query(value = """
+    	    SELECT COUNT(*) 
+    	    FROM dbo.Appointment a
+    	    WHERE a.StylistID = :stylistId
+    	      AND a.ScheduledStartDateTime < :end
+    	      AND DATEADD(MINUTE, a.DurationMinutes, a.ScheduledStartDateTime) > :start
+    	      AND (:excludeId IS NULL OR a.AppointmentID <> :excludeId)
+    	""", nativeQuery = true)
+    	int countOverlappingAppointments(
+    	    @Param("stylistId") Integer stylistId,
+    	    @Param("start") LocalDateTime start,
+    	    @Param("end") LocalDateTime end,
+    	    @Param("excludeId") Integer excludeId
+    	);
+
 
 
 

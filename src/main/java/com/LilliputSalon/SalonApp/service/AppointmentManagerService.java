@@ -21,6 +21,7 @@ import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
+import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 
 import jakarta.transaction.Transactional;
 
@@ -206,8 +207,8 @@ public class AppointmentManagerService {
             LocalDateTime oStart = other.getScheduledStartDateTime();
             LocalDateTime oEnd = oStart.plusMinutes(other.getTotalDurationMinutes());
 
-            boolean overlap =
-                    !(newEnd.isBefore(oStart) || newStart.isAfter(oEnd));
+            boolean overlap = newStart.isBefore(oEnd) && newEnd.isAfter(oStart);
+
 
             if (overlap) {
                 return "Appointment overlaps another appointment.";
@@ -240,10 +241,9 @@ public class AppointmentManagerService {
     @Transactional
     public void create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
 
-    	Instant instant = Instant.parse(dto.getStart());
-    	LocalDateTime start =
-    	    LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
-
+        Instant instant = Instant.parse(dto.getStart());
+        LocalDateTime start =
+            LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
         // 1️⃣ Load services
         List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(dto.getServiceIds());
@@ -256,6 +256,22 @@ public class AppointmentManagerService {
         	    .mapToInt(s -> s.getTypicalDurationMinutes())
         	    .sum();
 
+        LocalDateTime end = start.plusMinutes(totalMinutes);
+
+        boolean overlap =
+        	    repo.countOverlappingAppointments(
+        	        dto.getStylistId(),
+        	        start,
+        	        end,
+        	        null
+        	    ) > 0;
+
+
+        if (overlap) {
+            throw new AppointmentOverlapException(
+                "This appointment overlaps an existing appointment for this stylist."
+            );
+        }
 
         // 3️⃣ Create appointment
         Appointment appt = new Appointment();
@@ -269,57 +285,7 @@ public class AppointmentManagerService {
         repo.save(appt);
 
         // 4️⃣ Create AppointmentService rows
-        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
-            AppointmentService as = new AppointmentService();
-            as.setAppointment(appt);
-            as.setService(s);
-            as.setActualPrice(s.getBasePrice());
-            as.setActualDurationMinutes(s.getTypicalDurationMinutes());
-            ASrepo.save(as);
-        }
-    }
-    
-    
-
-    public void updateAppointment(Integer id, LocalDateTime newStart) {
-
-        Appointment appt = repo.findById(id).orElseThrow();
-
-        // 🔒 Only allow start change
-        appt.setScheduledStartDateTime(newStart);
-
-        // ❌ DO NOT accept end or duration from client
-
-        repo.save(appt);
-    }
-    
-    public List<Appointment> getAllServiceAppointments() {
-        return repo.findAllWithServices();
-    }
-
-
-    @Transactional
-    public void updateServices(Appointment appt, List<Long> serviceIds) {
-
-        // 1️⃣ Delete existing services
-        ASrepo.deleteByAppointmentId(appt.getAppointmentId());
-
-        // 2️⃣ Load new services
-        List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(serviceIds);
-        if (services.isEmpty()) {
-            throw new RuntimeException("At least one service is required.");
-        }
-
-        // 3️⃣ Recalculate duration
-        int totalMinutes = services.stream()
-        	    .mapToInt(s -> s.getTypicalDurationMinutes())
-        	    .sum();
-
-
-        appt.setDurationMinutes(totalMinutes);
-
-        // 4️⃣ Recreate AppointmentService rows
-        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
+        for (com.LilliputSalon.SalonApp.domain.Service s: services) {
             AppointmentService as = new AppointmentService();
             as.setAppointment(appt);
             as.setService(s);
@@ -332,6 +298,43 @@ public class AppointmentManagerService {
 
 
 	public List<Availability> getAllStylistShifts() {
-		return availabilityRepo.findAll();
+		return availabilityRepo.findAllWithBreaks();
 	}
+
+
+	@Transactional
+	public void updateAppointment(Integer id, LocalDateTime newStart) {
+
+	    Appointment appt = repo.findById(id).orElseThrow();
+
+	    LocalDateTime newEnd =
+	        newStart.plusMinutes(appt.getDurationMinutes());
+
+	    boolean overlap =
+	    	    repo.countOverlappingAppointments(
+	    	        appt.getStylistId(),
+	    	        newStart,
+	    	        newEnd,
+	    	        appt.getAppointmentId()
+	    	    ) > 0;
+
+
+	    if (overlap) {
+	        throw new AppointmentOverlapException(
+	            "Appointment overlaps another appointment."
+	        );
+	    }
+
+	    appt.setScheduledStartDateTime(newStart);
+	    repo.save(appt);
+	}
+
+
+	public void updateServices(Appointment appt, List<Long> serviceIds) {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+
 }

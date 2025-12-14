@@ -31,6 +31,7 @@ import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
+import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 
 @Controller
@@ -122,7 +123,7 @@ public class CalendarController {
 	@GetMapping(value = "/calendar/events", produces = "application/json")
 	public List<Map<String, Object>> getEvents() {
 
-		List<Appointment> appts = appointmentService.getAllServiceAppointments();
+		List<Appointment> appts = appointmentService.getAllAppointments();
 
 		Map<Long, Profile> profileCache = new HashMap<>();
 
@@ -168,7 +169,12 @@ public class CalendarController {
 			List<Long> serviceIds = appt.getAppointmentServices() == null ? List.of()
 					: appt.getAppointmentServices().stream().map(as -> as.getService().getId()).toList();
 
-			ev.put("extendedProps", Map.of("status", appt.getStatus(), "serviceIds", serviceIds));
+			ev.put("extendedProps", Map.of(
+				    "status", appt.getStatus(),
+				    "serviceIds", serviceIds,
+				    "stylistId", appt.getStylistId()
+				));
+
 
 			events.add(ev);
 		}
@@ -180,45 +186,23 @@ public class CalendarController {
 	@ResponseBody
 	public Map<String, Object> updateEvent(@RequestBody CalendarEventDTO dto) {
 
-	    Map<String, Object> result = new HashMap<>();
-
-	    try {
-	        Appointment appt = appointmentService.getById(dto.getId());
-	        if (appt == null) {
-	            return Map.of("status", "error", "message", "Appointment not found");
-	        }
-
-	        ZoneId zone = ZoneId.systemDefault();
-
-	        LocalDateTime start =
-	            LocalDateTime.ofInstant(Instant.parse(dto.getStart()), zone);
-
-	        // 🔁 update services + duration if provided
-	        if (dto.getServiceIds() != null && !dto.getServiceIds().isEmpty()) {
-	            appointmentService.updateServices(appt, dto.getServiceIds());
-	        }
-
-	        // recompute end from updated duration
-	        LocalDateTime end =
-	            start.plusMinutes(appt.getTotalDurationMinutes());
-
-	        String validationError =
-	            appointmentService.validateAppointmentMove(appt, start, end);
-
-	        if (validationError != null) {
-	            return Map.of("status", "error", "message", validationError);
-	        }
-
-	        appt.setScheduledStartDateTime(start);
-	        appointmentService.save(appt);
-
-	        return Map.of("status", "ok");
-
-	    } catch (Exception ex) {
-	        ex.printStackTrace();
-	        return Map.of("status", "error", "message", ex.getMessage());
+	    Appointment appt = appointmentService.getById(dto.getId());
+	    if (appt == null) {
+	        return Map.of("status", "error", "message", "Appointment not found");
 	    }
+
+	    ZoneId zone = ZoneId.systemDefault();
+
+	    LocalDateTime start =
+	        LocalDateTime.ofInstant(Instant.parse(dto.getStart()), zone)
+	                     .withSecond(0).withNano(0);
+
+	    appointmentService.updateAppointment(appt.getAppointmentId(), start);
+
+	    return Map.of("status", "ok");
 	}
+
+
 
 
 
@@ -238,27 +222,30 @@ public class CalendarController {
 
 	@PostMapping("/appointments/create")
 	@ResponseBody
-	public Map<String, Object> createAppointment(@RequestBody CreateAppointmentDTO dto) {
+	public ResponseEntity<?> createAppointment(@RequestBody CreateAppointmentDTO dto) {
 
-		Map<String, Object> result = new HashMap<>();
+	    try {
+	        Long customerId = resolveOrCreateCustomer(dto);
+	        BusinessHours bh = businessHoursRepo.findById(1)
+	            .orElseThrow(() -> new RuntimeException("Business hours missing"));
 
-		try {
-			Long customerId = resolveOrCreateCustomer(dto);
+	        appointmentService.create(dto, customerId, bh);
 
-			BusinessHours bh = businessHoursRepo.findById(1)
-					.orElseThrow(() -> new RuntimeException("Business hours missing"));
+	        return ResponseEntity.ok(Map.of("status", "ok"));
 
-			appointmentService.create(dto, customerId, bh);
+	    } catch (AppointmentOverlapException ex) {
+	        return ResponseEntity
+	            .status(409)
+	            .body(Map.of("status", "error", "message", ex.getMessage()));
 
-			result.put("status", "ok");
-			return result;
-
-		} catch (Exception e) {
-			result.put("status", "error");
-			result.put("message", e.getMessage());
-			return result;
-		}
+	    } catch (Exception ex) {
+	        ex.printStackTrace();
+	        return ResponseEntity
+	            .status(500)
+	            .body(Map.of("status", "error", "message", ex.getMessage()));
+	    }
 	}
+
 
 	private Long resolveOrCreateCustomer(CreateAppointmentDTO dto) {
 
