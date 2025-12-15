@@ -12,7 +12,7 @@ import lombok.Setter;
 public class CreateAppointmentDTO {
     private Integer stylistId;
     private String start;
-
+    
     private List<Long> serviceIds;
 
 

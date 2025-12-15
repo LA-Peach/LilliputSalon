@@ -17,7 +17,7 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Inte
     Availability findByUser_IdAndWorkDate(Long userId, LocalDate workDate);
 
     Availability findByAvailabilityIdAndUser_Id(Integer availabilityId, Long userId);
-
+    
     @Query("""
     	    select distinct a
     	    from Availability a

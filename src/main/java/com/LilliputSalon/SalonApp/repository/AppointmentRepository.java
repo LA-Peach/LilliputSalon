@@ -37,7 +37,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
             Integer customerId,
             LocalDateTime after
     );
-
+    
     @Query("""
     	    select distinct a
     	    from Appointment a
@@ -47,7 +47,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	List<Appointment> findAllWithServices();
 
     @Query(value = """
-    	    SELECT COUNT(*)
+    	    SELECT COUNT(*) 
     	    FROM dbo.Appointment a
     	    WHERE a.StylistID = :stylistId
     	      AND a.IsCompleted = 0

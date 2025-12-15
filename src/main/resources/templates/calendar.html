@@ -38,33 +38,7 @@
         <button id="newApptBtn" class="btn-primary">+ New Appointment</button>
     </div>
     
-    <div class="calendar-layout">
-
-	    <div id="calendar"></div>
-	
-	    <div id="walkInPanel" class="glass-card">
-	        <div style="display:flex;justify-content:space-between;align-items:center;">
-	            <h3>Walk-In Queue</h3>
-	            <button id="newWalkInBtn" class="btn-primary">+ Walk-In</button>
-	        </div>
-	
-	        <table style="width:100%;margin-top:12px;">
-	            <thead>
-	                <tr>
-	                    <th>Customer</th>
-	                    <th>Services</th>
-	                    <th>Wait</th>
-	                    <th>Assign Stylist</th>
-	                    <th></th>
-	                </tr>
-	            </thead>
-	            <tbody id="walkInQueue"></tbody>
-	        </table>
-	    </div>
-	
-	</div>
-
-    
+    <div id="calendar"></div>
 </main>
 
 <!-- FullCalendar Script -->
@@ -86,8 +60,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         selectedEditServiceIds: [],
         stylistVisibility: {},
         availabilityTogglesBuilt: false,
-        serviceCache: null,
-        walkInServices: []
+        serviceCache: null
     };
     
     state.serviceCache = null;
@@ -139,7 +112,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     
     function hasOverlap({ stylistId, start, end }) {
-    	  if (!state.serviceCache) return false;
     	  const events = calendar.getEvents();
     	  const allServices = state.serviceCache.flatMap(c => c.services);
 
@@ -814,6 +786,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     }
     
+<<<<<<< HEAD
  	// ========================================
     // WALK-INS
     // ========================================
@@ -954,6 +927,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
     
+=======
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
     
     // ========================================
     // EVENT LISTENERS
@@ -985,6 +960,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 	modalStartInput.addEventListener('change', recomputeEditEndFromStart);
 	modalStartInput.addEventListener('input', recomputeEditEndFromStart);
 
+<<<<<<< HEAD
     //Walk-In Buttons
     document.getElementById('newWalkInBtn')
 	    .addEventListener('click', openWalkInModal);
@@ -1007,6 +983,9 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
 
+=======
+    
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
     
     // ========================================
     // INITIALIZATION
@@ -1015,8 +994,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     setupCustomerSearch();
     await loadServiceCache();
     calendar.render();
-    await loadWalkInQueue();
-
 });
 </script>
 
@@ -1097,65 +1074,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         </div>
     </div>
 </div>
-
-<div id="walkInModal" class="modal-overlay" style="display:none;">
-  <div class="modal-card glass-card">
-    <h3>New Walk-In</h3>
-
-    <div class="field-group">
-      <label>Has the customer been here before?</label>
-      <select id="walkInReturning">
-        <option value="">Select</option>
-        <option value="yes">Yes</option>
-        <option value="no">No</option>
-      </select>
-    </div>
-
-    <!-- EXISTING CUSTOMER -->
-    <div id="walkInExisting" style="display:none;">
-      <div class="field-group">
-        <label>Customer Email</label>
-        <input type="email" id="walkInEmail" placeholder="Search email">
-        <div id="walkInSearchResults" class="search-results"></div>
-      </div>
-    </div>
-
-    <!-- NEW CUSTOMER -->
-    <div id="walkInNew" style="display:none;">
-      <div class="field-group">
-        <label>Email</label>
-        <input type="email" id="walkInNewEmail">
-      </div>
-
-      <div class="field-group">
-        <label>First Name</label>
-        <input type="text" id="walkInFirstName">
-      </div>
-
-      <div class="field-group">
-        <label>Last Name</label>
-        <input type="text" id="walkInLastName">
-      </div>
-
-      <div class="field-group">
-        <label>Phone</label>
-        <input type="text" id="walkInPhone">
-      </div>
-    </div>
-
-    <div class="field-group">
-      <label>Services</label>
-      <div id="walkInServiceList"></div>
-    </div>
-
-    <div style="display:flex;gap:10px;justify-content:center;margin-top:16px;">
-      <button id="walkInSaveBtn" class="btn-primary">Add Walk-In</button>
-      <button id="walkInCancelBtn" class="btn-secondary">Cancel</button>
-    </div>
-  </div>
-</div>
-
-
 
 </body>
 </html>

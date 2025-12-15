@@ -18,7 +18,7 @@ public class ApiExceptionHandler {
             )
         );
     }
-
+    
     @ExceptionHandler(AppointmentAvailabilityException.class)
     public ResponseEntity<?> handleAvailability(AppointmentAvailabilityException ex) {
         return ResponseEntity.badRequest().body(

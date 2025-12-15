@@ -3,6 +3,10 @@ package com.LilliputSalon.SalonApp.domain;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -11,6 +15,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -55,7 +61,7 @@ public class Appointment {
 
     @Column(name = "IsCompleted")
     private Boolean isCompleted;
-
+    
     @OneToMany(
     	    mappedBy = "appointment",
     	    fetch = FetchType.LAZY,
@@ -67,5 +73,5 @@ public class Appointment {
 
     public int getTotalDurationMinutes() {
         return durationMinutes != null ? durationMinutes : 0;}
-
+    
 }

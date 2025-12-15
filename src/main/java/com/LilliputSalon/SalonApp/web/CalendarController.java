@@ -1,5 +1,6 @@
 package com.LilliputSalon.SalonApp.web;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,10 +30,8 @@ import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
-import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
-import com.LilliputSalon.SalonApp.repository.WalkInRepository;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 
@@ -45,6 +44,7 @@ public class CalendarController {
 	private final BusinessHoursRepository businessHoursRepo;
 	private final UserRepository userRepo;
 	private final UserTypeRepository userTypeRepo;
+<<<<<<< HEAD
 	private final ServiceRepository serviceRepo;
 	private final WalkInRepository walkInRepo;
 	private final AppointmentRepository appointmentRepo;
@@ -57,14 +57,22 @@ public class CalendarController {
 			UserRepository userRepo, UserTypeRepository userTypeRepo,
 			ServiceRepository serviceRepo, WalkInRepository walkInRepo,
 			AppointmentRepository appointmentRepo) {
+=======
+
+	public CalendarController(AppointmentManagerService appointmentService, ProfileRepository profileRepo,
+			BusinessHoursRepository businessHoursRepo, UserRepository userRepo, UserTypeRepository userTypeRepo) {
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 		this.appointmentService = appointmentService;
 		this.profileRepo = profileRepo;
 		this.businessHoursRepo = businessHoursRepo;
 		this.userRepo = userRepo;
 		this.userTypeRepo = userTypeRepo;
+<<<<<<< HEAD
 		this.serviceRepo = serviceRepo;
 		this.walkInRepo = walkInRepo;
 		this.appointmentRepo = appointmentRepo;
+=======
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 	}
 
 	@GetMapping("/calendar")
@@ -294,7 +302,5 @@ public class CalendarController {
 
 		return guestUser.getId();
 	}
-
-
 
 }

@@ -1,7 +1,9 @@
 package com.LilliputSalon.SalonApp.web;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,7 +33,7 @@ public class ServiceController {
         model.addAttribute("categories", categories);
         return "services";
     }
-
+    
     @GetMapping("/api")
     @ResponseBody
     public List<Map<String, Object>> getServicesForCalendar() {

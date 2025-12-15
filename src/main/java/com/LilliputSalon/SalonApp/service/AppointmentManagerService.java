@@ -1,7 +1,11 @@
 package com.LilliputSalon.SalonApp.service;
 
+<<<<<<< HEAD
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+=======
+import java.time.Duration;
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,17 +20,23 @@ import com.LilliputSalon.SalonApp.domain.AppointmentService;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
+<<<<<<< HEAD
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.domain.WalkIn;
+=======
+import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
-import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
+<<<<<<< HEAD
 import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.WalkInRepository;
 import com.LilliputSalon.SalonApp.repository.WalkInRequestedServiceRepository;
+=======
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 import com.LilliputSalon.SalonApp.security.AppointmentAvailabilityException;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 
@@ -39,6 +49,7 @@ public class AppointmentManagerService {
     private final AvailibilityRepository availabilityRepo;
     private final AppointmentServiceRepository ASrepo;
     private final ServiceRepository serviceRepo;
+<<<<<<< HEAD
     private final WalkInRepository walkInRepo;
     private final WalkInRequestedServiceRepository walkInServiceRepo;
     private final BusinessHoursRepository businessHoursRepo;
@@ -56,17 +67,27 @@ public class AppointmentManagerService {
             WalkInManagerService walkInManagerService,
             UserRepository userRepo
     ) {
+=======
+
+
+    public AppointmentManagerService(AppointmentRepository repo,
+                                     AvailibilityRepository availabilityRepo,
+                                     AppointmentServiceRepository ASrepo,
+                                     ServiceRepository serviceRepo) {
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
         this.repo = repo;
         this.availabilityRepo = availabilityRepo;
         this.ASrepo = ASrepo;
         this.serviceRepo = serviceRepo;
+<<<<<<< HEAD
         this.walkInRepo = walkInRepo;
         this.walkInServiceRepo = walkInServiceRepo;
         this.businessHoursRepo = businessHoursRepo;
         this.walkInManagerService = walkInManagerService;
         this.userRepo = userRepo;
+=======
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
     }
-
 
 
     public Appointment getById(Integer id) {
@@ -273,7 +294,7 @@ public class AppointmentManagerService {
     }
 
     @Transactional
-    public Appointment create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
+    public void create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
 
         Instant instant = Instant.parse(dto.getStart());
         LocalDateTime start =
@@ -326,8 +347,6 @@ public class AppointmentManagerService {
             as.setActualDurationMinutes(s.getTypicalDurationMinutes());
             ASrepo.save(as);
         }
-
-        return appt;
     }
 
 
@@ -376,9 +395,9 @@ public class AppointmentManagerService {
 
 	public void updateServices(Appointment appt, List<Long> serviceIds) {
 		// TODO Auto-generated method stub
-
+		
 	}
-
+	
 	private void validateNewAppointment(
 		    Integer stylistId,
 		    LocalDateTime start,
@@ -425,6 +444,7 @@ public class AppointmentManagerService {
 		    }
 		}
 
+<<<<<<< HEAD
 	@Transactional
 	public Appointment convertWalkInToAppointment(
 	    Integer walkInId,
@@ -479,6 +499,8 @@ public class AppointmentManagerService {
 
 
 
+=======
+>>>>>>> parent of f810f2c (Semi-working walk-ins)
 
 
 
