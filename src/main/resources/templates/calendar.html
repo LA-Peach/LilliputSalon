@@ -828,10 +828,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 	        const tr = document.createElement('tr');
 	
 	        tr.innerHTML = `
-	            <td>${w.customerId ?? 'Guest'}</td>
+	        	<td>${w.customerName ?? 'Guest'}</td>
 	            <td>
-		            ${(w.services || []).map(s => s.service?.name).join(', ')}
-		          </td>
+	            	${(w.services || []).join(', ')}
+		         </td>
 
 	            <td>${w.estimatedWaitMinutes} min</td>
 	            <td>
