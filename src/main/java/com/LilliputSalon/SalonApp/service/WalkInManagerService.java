@@ -208,16 +208,10 @@ public class WalkInManagerService {
                 dto.setCustomerId(w.getCustomerId());
                 dto.setEstimatedWaitMinutes(w.getEstimatedWaitMinutes());
 
-                Profile profile = profileRepo
-                    .findByUser_Id(w.getCustomerId())
-                    .orElse(null);
-
-                String displayName =
-                    profile != null
-                        ? buildDisplayName(profile)
-                        : "Guest";
-
-                dto.setCustomerName(displayName);
+                Profile p = profileRepo.findByUser_Id(w.getCustomerId()).orElse(null);
+                dto.setCustomerName(
+                    p != null ? p.getFirstName() + " " + p.getLastName() : "Guest"
+                );
 
                 List<String> services =
                     walkInServiceRepo.findByWalkIn_WalkInId(w.getWalkInId())
@@ -231,7 +225,6 @@ public class WalkInManagerService {
             })
             .toList();
     }
-
 
 
     // --------------------------------------------------
@@ -294,11 +287,7 @@ public class WalkInManagerService {
                 continue;
             }
 
-            LocalTime cursor =
-            	    date.equals(LocalDate.now())
-            	        ? max(availability.getDayStartTime(), LocalTime.now())
-            	        : availability.getDayStartTime();
-
+            LocalTime cursor = availability.getDayStartTime();
             LocalTime dayEnd = availability.getDayEndTime();
 
             while (!cursor.plusMinutes(durationMinutes).isAfter(dayEnd)) {
@@ -545,25 +534,6 @@ public class WalkInManagerService {
     	    BigDecimal discountAmount,
     	    BigDecimal totalAmount
     	) {}
-    
-    private String buildDisplayName(Profile p) {
-        if (p == null) return "Guest";
-
-        String first = p.getFirstName();
-        String last  = p.getLastName();
-
-        if (first != null && !first.isBlank() &&
-            last != null && !last.isBlank()) {
-            return first + " " + last;
-        }
-
-        if (first != null && !first.isBlank()) {
-            return first;
-        }
-
-        return "Guest";
-    }
-
 
 
 
