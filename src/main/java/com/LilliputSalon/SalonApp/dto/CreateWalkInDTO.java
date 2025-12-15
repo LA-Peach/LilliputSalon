@@ -15,6 +15,4 @@ public class CreateWalkInDTO {
 
     // Requested services (REQUIRED)
     private List<CreateWalkInServiceDTO> services;
-    
-    private Boolean allowLaterToday;
 }

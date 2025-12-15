@@ -41,12 +41,6 @@ public interface WalkInRepository extends JpaRepository<WalkIn, Integer> {
     	""")
     	WalkIn findWithServices(Integer walkInId);
 
-    WalkIn findFirstByCustomerIdAndAssignedStylistIdAndStatus(
-    	    Long customerId,
-    	    Integer stylistId,
-    	    String status
-    	);
-
 
 
 

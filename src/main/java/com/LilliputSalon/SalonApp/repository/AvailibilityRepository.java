@@ -24,18 +24,6 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Inte
     	    left join fetch a.breakTimes
     	""")
     	List<Availability> findAllWithBreaks();
-    
-    List<Availability> findByWorkDateAndIsAvailableTrue(LocalDate workDate);
-    
-    @Query("""
-    	    select a
-    	    from Availability a
-    	    where a.workDate = :date
-    	      and a.isAvailable = true
-    	""")
-    	List<Availability> findWorkingStylistsToday(LocalDate date);
-
-
 
 
 }

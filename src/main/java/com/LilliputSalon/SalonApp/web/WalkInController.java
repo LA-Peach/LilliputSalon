@@ -37,20 +37,9 @@ public class WalkInController {
 
     @PostMapping("/create")
     public ResponseEntity<?> create(@RequestBody CreateWalkInDTO dto) {
-
-        WalkInResult result = service.create(dto);
-
-        return ResponseEntity.ok(
-            Map.of(
-                "status", "ok",
-                "walkInId", result.walkInId(),
-                "assigned", result.assigned(),
-                "requiresConfirmation", result.requiresConfirmation(),
-                "minutesUntilSlot", result.minutesUntilSlot()
-            )
-        );
+        service.create(dto);
+        return ResponseEntity.ok(Map.of("status", "ok"));
     }
-
 
 
     @GetMapping("/queue")
@@ -87,14 +76,6 @@ public class WalkInController {
             )
         );
     }
-    
-    public record WalkInResult(
-    	    Integer walkInId,
-    	    boolean assigned,
-    	    boolean requiresConfirmation,
-    	    Long minutesUntilSlot
-    	) {}
-
 
 
 

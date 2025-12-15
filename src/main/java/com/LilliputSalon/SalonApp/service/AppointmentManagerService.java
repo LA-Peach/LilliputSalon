@@ -1,11 +1,14 @@
 package com.LilliputSalon.SalonApp.service;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 =======
 import java.time.Duration;
 >>>>>>> parent of f810f2c (Semi-working walk-ins)
+=======
+>>>>>>> parent of ed61cec (75% Walk Ins)
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,7 +24,10 @@ import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.LilliputSalon.SalonApp.domain.User;
+=======
+>>>>>>> parent of ed61cec (75% Walk Ins)
 import com.LilliputSalon.SalonApp.domain.WalkIn;
 =======
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
@@ -32,7 +38,10 @@ import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 <<<<<<< HEAD
+<<<<<<< HEAD
 import com.LilliputSalon.SalonApp.repository.UserRepository;
+=======
+>>>>>>> parent of ed61cec (75% Walk Ins)
 import com.LilliputSalon.SalonApp.repository.WalkInRepository;
 import com.LilliputSalon.SalonApp.repository.WalkInRequestedServiceRepository;
 =======
@@ -53,8 +62,6 @@ public class AppointmentManagerService {
     private final WalkInRepository walkInRepo;
     private final WalkInRequestedServiceRepository walkInServiceRepo;
     private final BusinessHoursRepository businessHoursRepo;
-    private final WalkInManagerService walkInManagerService;
-    private final UserRepository userRepo;
 
     public AppointmentManagerService(
             AppointmentRepository repo,
@@ -63,9 +70,7 @@ public class AppointmentManagerService {
             ServiceRepository serviceRepo,
             WalkInRepository walkInRepo,
             WalkInRequestedServiceRepository walkInServiceRepo,
-            BusinessHoursRepository businessHoursRepo,
-            WalkInManagerService walkInManagerService,
-            UserRepository userRepo
+            BusinessHoursRepository businessHoursRepo
     ) {
 =======
 
@@ -83,10 +88,13 @@ public class AppointmentManagerService {
         this.walkInRepo = walkInRepo;
         this.walkInServiceRepo = walkInServiceRepo;
         this.businessHoursRepo = businessHoursRepo;
+<<<<<<< HEAD
         this.walkInManagerService = walkInManagerService;
         this.userRepo = userRepo;
 =======
 >>>>>>> parent of f810f2c (Semi-working walk-ins)
+=======
+>>>>>>> parent of ed61cec (75% Walk Ins)
     }
 
 
@@ -170,34 +178,24 @@ public class AppointmentManagerService {
         );
     }
 
-    @Transactional
     public void markAppointmentComplete(Integer appointmentId) {
 
-    	Appointment appt = repo.findById(appointmentId)
-    	        .orElseThrow(() -> new RuntimeException("Appointment not found"));
+        Appointment appt = repo.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
-    	    appt.setStatus("Completed");
-    	    appt.setIsCompleted(true);
+        // Mark completed
+        appt.setStatus("Completed");
+        appt.setIsCompleted(true);
 
-    	    User user = userRepo.findById(appt.getCustomerId())
-    	        .orElse(null);
+        // Award points = total amount (simple rule for now)
+        if (appt.getTotalAmount() != null) {
+            appt.setPointsEarned(appt.getTotalAmount().intValue());
+        } else {
+            appt.setPointsEarned(0);
+        }
 
-    	    // 🎯 Points logic
-    	    if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
-
-    	        int points = calculatePoints(appt.getTotalAmount());
-    	        appt.setPointsEarned(points);
-
-    	    } else {
-    	        appt.setPointsEarned(0);
-    	    }
-
-    	    repo.save(appt);
-
-    	    // 🔁 Close walk-in if this was from a walk-in
-    	    walkInManagerService.completeWalkInForAppointment(appt);
+        repo.save(appt);
     }
-
 
     public List<Appointment> getAllAppointments() {
         return repo.findAllWithServices();
@@ -487,16 +485,6 @@ public class AppointmentManagerService {
 
 	    return appt;
 	}
-	
-	private int calculatePoints(BigDecimal totalAmount) {
-	    if (totalAmount == null) return 0;
-
-	    return totalAmount
-	        .divide(BigDecimal.valueOf(10), 0, RoundingMode.FLOOR)
-	        .intValue();
-	}
-
-
 
 
 =======

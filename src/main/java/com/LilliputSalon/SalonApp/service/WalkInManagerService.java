@@ -1,7 +1,5 @@
 package com.LilliputSalon.SalonApp.service;
 
-import java.math.BigDecimal;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -32,7 +30,6 @@ import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
 import com.LilliputSalon.SalonApp.repository.WalkInRepository;
 import com.LilliputSalon.SalonApp.repository.WalkInRequestedServiceRepository;
-import com.LilliputSalon.SalonApp.web.WalkInController.WalkInResult;
 
 
 @Service
@@ -40,7 +37,6 @@ public class WalkInManagerService {
 
     private static final String STATUS_WAITING   = "WAITING";
     private static final String STATUS_IN_SERVICE = "IN_SERVICE";
-    private static final String STATUS_COMPLETED = "COMPLETED";
 
     private static final int MAX_LOOKAHEAD_DAYS = 14;
     private static final int SLOT_INCREMENT_MINUTES = 15;
@@ -82,79 +78,69 @@ public class WalkInManagerService {
     // CREATE WALK-IN
     // --------------------------------------------------
     @Transactional
-    public WalkInResult create(CreateWalkInDTO dto) {
+    public WalkIn create(CreateWalkInDTO dto) {
 
-        User customer = resolveCustomer(dto);
+        User customer;
 
-        int totalMinutes = calculateTotalMinutes(
-            loadServices(
-                dto.getServices()
-                   .stream()
-                   .map(CreateWalkInServiceDTO::getServiceId)
-                   .toList()
-            )
-        );
+        // -------------------------
+        // 1️⃣ Resolve customer
+        // -------------------------
+        if (dto.getCustomerId() != null) {
 
+            customer = userRepo.findById(dto.getCustomerId())
+                .orElseThrow(() -> new RuntimeException("Customer not found"));
+
+        } else if (dto.getNewCustomer() != null) {
+
+            customer = createInactiveCustomer(dto.getNewCustomer());
+
+        } else {
+            throw new IllegalArgumentException("Customer information required");
+        }
+
+        // -------------------------
+        // 2️⃣ Load services
+        // -------------------------
+        List<Long> serviceIds = dto.getServices()
+            .stream()
+            .map(CreateWalkInServiceDTO::getServiceId)
+            .toList();
+
+        List<com.LilliputSalon.SalonApp.domain.Service> services = serviceRepo.findAllById(serviceIds);
+
+        if (services.isEmpty()) {
+            throw new IllegalArgumentException("At least one service required");
+        }
+
+        int totalMinutes = services.stream()
+            .mapToInt(s -> s.getTypicalDurationMinutes())
+            .sum();
+
+        // -------------------------
+        // 3️⃣ Create walk-in
+        // -------------------------
         WalkIn walkIn = new WalkIn();
         walkIn.setCustomerId(customer.getId());
         walkIn.setTimeEntered(LocalDateTime.now());
         walkIn.setEstimatedWaitMinutes(totalMinutes);
-        walkIn.setStatus(STATUS_WAITING);
+        walkIn.setStatus("WAITING");
 
         walkInRepo.save(walkIn);
-        saveRequestedServices(walkIn, loadServices(
-            dto.getServices().stream()
-               .map(CreateWalkInServiceDTO::getServiceId)
-               .toList()
-        ));
 
-        SlotCandidate slot = findBestSlotToday(totalMinutes);
-
-        if (slot == null) {
-            return new WalkInResult(
-                walkIn.getWalkInId(),
-                false,
-                false,
-                null
-            );
+        // -------------------------
+        // 4️⃣ Attach services
+        // -------------------------
+        for (com.LilliputSalon.SalonApp.domain.Service s: services) {
+            WalkInRequestedService wrs = new WalkInRequestedService();
+            wrs.setWalkIn(walkIn);
+            wrs.setService(s);
+            wrs.setEstimatedDurationMinutes(s.getTypicalDurationMinutes());
+            wrs.setEstimatedPrice(s.getBasePrice());
+            walkInServiceRepo.save(wrs);
         }
 
-        long minutesAway =
-            Duration.between(LocalDateTime.now(), slot.start()).toMinutes();
-
-        // Auto assign if soon
-        if (minutesAway <= 30) {
-            convertToAppointment(walkIn.getWalkInId(), slot.stylistId().intValue());
-
-            return new WalkInResult(
-                walkIn.getWalkInId(),
-                true,
-                false,
-                minutesAway
-            );
-        }
-
-        // Needs confirmation
-        if (!Boolean.TRUE.equals(dto.getAllowLaterToday())) {
-            return new WalkInResult(
-                walkIn.getWalkInId(),
-                false,
-                true,
-                minutesAway
-            );
-        }
-
-        // Confirmed → assign
-        convertToAppointment(walkIn.getWalkInId(), slot.stylistId().intValue());
-
-        return new WalkInResult(
-            walkIn.getWalkInId(),
-            true,
-            false,
-            minutesAway
-        );
+        return walkIn;
     }
-
 
     
     @Transactional
@@ -319,23 +305,6 @@ public class WalkInManagerService {
     // --------------------------------------------------
     // HELPERS
     // --------------------------------------------------
-    private User resolveCustomer(CreateWalkInDTO dto) {
-
-        // Existing customer selected
-        if (dto.getCustomerId() != null) {
-            return userRepo.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found"));
-        }
-
-        // New customer info provided
-        if (dto.getNewCustomer() != null) {
-            return createInactiveCustomer(dto.getNewCustomer());
-        }
-
-        throw new IllegalArgumentException("Customer information is required");
-    }
-
-    
     private WalkIn getWalkIn(Integer id) {
         return walkInRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Walk-in not found"));
@@ -394,21 +363,8 @@ public class WalkInManagerService {
         appt.setStatus("Scheduled");
         appt.setIsCompleted(false);
 
-        // 💰 Monetary fields (temporary values)
-        List<WalkInRequestedService> services =
-            walkInServiceRepo.findByWalkIn_WalkInId(walkIn.getWalkInId());
-
-        MonetaryTotals totals = calculateTotals(services);
-
-        appt.setBaseAmount(totals.baseAmount());
-        appt.setDiscountAmount(totals.discountAmount());
-        appt.setTotalAmount(totals.totalAmount());
-        appt.setPointsEarned(0);
-
-
         return appointmentRepo.save(appt);
     }
-
 
     private void attachAppointmentServices(
             Appointment appt,
@@ -435,108 +391,4 @@ public class WalkInManagerService {
                         end.toLocalTime().isAfter(b.getBreakStartTime())
                 );
     }
-    
-    private record SlotCandidate(
-    	    Long stylistId,
-    	    LocalDateTime start
-    	) {}
-    
-    private SlotCandidate findBestSlotToday(int durationMinutes) {
-
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
-
-        List<Availability> todaysStylists =
-            availabilityRepo.findWorkingStylistsToday(today);
-
-        SlotCandidate best = null;
-
-        for (Availability a : todaysStylists) {
-
-            LocalTime cursor =
-                max(a.getDayStartTime(), now.toLocalTime());
-
-            while (!cursor.plusMinutes(durationMinutes)
-                          .isAfter(a.getDayEndTime())) {
-
-                LocalDateTime start = LocalDateTime.of(today, cursor);
-                LocalDateTime end = start.plusMinutes(durationMinutes);
-
-                if (overlapsBreak(a, start, end)) {
-                    cursor = cursor.plusMinutes(SLOT_INCREMENT_MINUTES);
-                    continue;
-                }
-
-                boolean overlap =
-                    appointmentRepo.countOverlappingAppointments(
-                        a.getUser().getId().intValue(),
-                        start,
-                        end,
-                        null
-                    ) > 0;
-
-                if (!overlap) {
-                    if (best == null || start.isBefore(best.start())) {
-                        best = new SlotCandidate(
-                            a.getUser().getId(),
-                            start
-                        );
-                    }
-                    break;
-                }
-
-                cursor = cursor.plusMinutes(SLOT_INCREMENT_MINUTES);
-            }
-        }
-
-        return best;
-    }
-    
-    private LocalTime max(LocalTime a, LocalTime b) {
-        return a.isAfter(b) ? a : b;
-    }
-    
-    @Transactional
-    public void completeWalkInForAppointment(Appointment appt) {
-
-        WalkIn walkIn = walkInRepo
-            .findFirstByCustomerIdAndAssignedStylistIdAndStatus(
-                appt.getCustomerId(),
-                appt.getStylistId(),
-                STATUS_IN_SERVICE
-            );
-
-        if (walkIn != null) {
-            walkIn.setStatus(STATUS_COMPLETED);
-            walkInRepo.save(walkIn);
-        }
-    }
-    
-    private MonetaryTotals calculateTotals(List<WalkInRequestedService> services) {
-
-        BigDecimal baseAmount = services.stream()
-            .map(WalkInRequestedService::getEstimatedPrice)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        BigDecimal totalAmount = baseAmount.subtract(discountAmount);
-
-        return new MonetaryTotals(
-            baseAmount,
-            discountAmount,
-            totalAmount
-        );
-    }
-
-
-    private record MonetaryTotals(
-    	    BigDecimal baseAmount,
-    	    BigDecimal discountAmount,
-    	    BigDecimal totalAmount
-    	) {}
-
-
-
-
-
 }
