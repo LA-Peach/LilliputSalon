@@ -462,6 +462,74 @@ document.addEventListener('DOMContentLoaded', async function () {
         closeCreateModal();
     }
     
+    document.getElementById('walkInSaveBtn').onclick = async () => {
+
+    	  if (state.walkInServices.length === 0) {
+    	    alert('Select at least one service');
+    	    return;
+    	  }
+
+    	  const returning = document.getElementById('walkInReturning').value;
+
+    	  let payload = {
+    	    services: state.walkInServices.map(id => ({ serviceId: id }))
+    	  };
+
+    	  if (returning === 'yes') {
+    	    if (!selectedCustomerId) {
+    	      alert('Select an existing customer');
+    	      return;
+    	    }
+    	    payload.customerId = selectedCustomerId;
+    	  }
+
+    	  if (returning === 'no') {
+    	    payload.newCustomer = {
+    	      email: document.getElementById('walkInNewEmail').value,
+    	      firstName: document.getElementById('walkInFirstName').value,
+    	      lastName: document.getElementById('walkInLastName').value,
+    	      phone: document.getElementById('walkInPhone').value
+    	    };
+    	  }
+
+    	  // 🔹 FIRST ATTEMPT
+    	  const res = await fetch('/walkins/create', {
+    	    method: 'POST',
+    	    headers: {
+    	      'Content-Type': 'application/json',
+    	      [csrfHeader]: csrfToken
+    	    },
+    	    body: JSON.stringify(payload)
+    	  });
+
+    	  const data = await res.json();
+
+    	  // 🔹 ASK CONFIRMATION IF NEEDED
+    	  if (data.requiresConfirmation) {
+    	    const ok = confirm(
+    	      `We can fit you in today, but it would be in about ${data.minutesUntilSlot} minutes.\n\nWould you like to come back later today?`
+    	    );
+
+    	    if (!ok) return;
+
+    	    payload.allowLaterToday = true;
+
+    	    await fetch('/walkins/create', {
+    	      method: 'POST',
+    	      headers: {
+    	        'Content-Type': 'application/json',
+    	        [csrfHeader]: csrfToken
+    	      },
+    	      body: JSON.stringify(payload)
+    	    });
+    	  }
+
+    	  document.getElementById('walkInModal').style.display = 'none';
+    	  loadWalkInQueue();
+    	  calendar.refetchEvents();
+    	};
+
+    
     
     // ========================================
     // UI MANAGEMENT
@@ -856,28 +924,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     	    );
     	}
     	
-    	document.getElementById('walkInSaveBtn').onclick = async () => {
-    	    if (state.walkInServices.length === 0) {
-    	        alert('Select at least one service');
-    	        return;
-    	    }
-
-    	    await fetch('/walkins/create', {
-    	        method: 'POST',
-    	        headers: {
-    	            'Content-Type': 'application/json',
-    	            [csrfHeader]: csrfToken
-    	        },
-    	        body: JSON.stringify({
-    	            customerId: null,
-    	            services: state.walkInServices.map(id => ({ serviceId: id }))
-    	        })
-
-    	    });
-
-    	    document.getElementById('walkInModal').style.display = 'none';
-    	    loadWalkInQueue();
-    	};
+    	
     	
     	const emailInput = document.getElementById('walkInEmail');
     	const resultsBox = document.getElementById('walkInSearchResults');
@@ -956,47 +1003,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 		    e.target.value === 'no' ? 'block' : 'none';
 		});
 	
-	document.getElementById('walkInSaveBtn').onclick = async () => {
-		  if (state.walkInServices.length === 0) {
-		    alert('Select at least one service');
-		    return;
-		  }
 
-		  const returning = document.getElementById('walkInReturning').value;
-
-		  let payload = {
-		    services: state.walkInServices.map(id => ({ serviceId: id }))
-		  };
-
-		  if (returning === 'yes') {
-		    if (!selectedCustomerId) {
-		      alert('Select an existing customer');
-		      return;
-		    }
-		    payload.customerId = selectedCustomerId;
-		  }
-
-		  if (returning === 'no') {
-		    payload.newCustomer = {
-		      email: document.getElementById('walkInNewEmail').value,
-		      firstName: document.getElementById('walkInFirstName').value,
-		      lastName: document.getElementById('walkInLastName').value,
-		      phone: document.getElementById('walkInPhone').value
-		    };
-		  }
-
-		  await fetch('/walkins/create', {
-		    method: 'POST',
-		    headers: {
-		      'Content-Type': 'application/json',
-		      [csrfHeader]: csrfToken
-		    },
-		    body: JSON.stringify(payload)
-		  });
-
-		  document.getElementById('walkInModal').style.display = 'none';
-		  loadWalkInQueue();
-		};
 
 
 
