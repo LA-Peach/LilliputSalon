@@ -461,7 +461,7 @@ public class AppointmentManagerService {
 	    // Uses your existing availability + overlap enforcement inside create()
 	    Appointment appt = create(dto, wi.getCustomerId(), bh);
 
-	    wi.setStatus("CONVERTED");
+	    wi.setStatus("IN_SERVICE");
 	    wi.setAssignedStylistId(stylistId);
 	    walkInRepo.save(wi);
 
