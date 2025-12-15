@@ -125,6 +125,16 @@ body.page-gradient {
 @media(max-width: 580px) {
     .grid-2 { grid-template-columns: 1fr; }
 }
+@media (max-width: 1024px) {
+    .calendar-layout {
+        flex-direction: column;
+    }
+
+    #walkInPanel {
+        position: static;
+    }
+}
+
 
 
 /* =====================================
@@ -731,6 +741,24 @@ button {
     0 4px 10px rgba(90, 50, 100, 0.35);
 }
 
+.calendar-layout {
+    display: flex;
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+    align-items: flex-start;
+}
+
+#calendar {
+    flex: 3;
+}
+
+#walkInPanel {
+    flex: 1;
+    padding: 16px;
+    position: sticky;
+    top: 100px;
+}
 
 
 

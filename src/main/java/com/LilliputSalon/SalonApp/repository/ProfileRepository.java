@@ -23,7 +23,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
             where lower(u.email) like lower(concat('%', :q, '%'))
         """)
         List<Profile> searchByEmail(@Param("q") String q);
-    
+
     @Query("""
     	    select p
     	    from Profile p

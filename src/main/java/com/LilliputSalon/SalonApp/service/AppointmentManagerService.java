@@ -1,6 +1,5 @@
 package com.LilliputSalon.SalonApp.service;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,12 +14,15 @@ import com.LilliputSalon.SalonApp.domain.AppointmentService;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
-import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
+import com.LilliputSalon.SalonApp.domain.WalkIn;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
+import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
+import com.LilliputSalon.SalonApp.repository.WalkInRepository;
+import com.LilliputSalon.SalonApp.repository.WalkInRequestedServiceRepository;
 import com.LilliputSalon.SalonApp.security.AppointmentAvailabilityException;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 
@@ -33,17 +35,28 @@ public class AppointmentManagerService {
     private final AvailibilityRepository availabilityRepo;
     private final AppointmentServiceRepository ASrepo;
     private final ServiceRepository serviceRepo;
+    private final WalkInRepository walkInRepo;
+    private final WalkInRequestedServiceRepository walkInServiceRepo;
+    private final BusinessHoursRepository businessHoursRepo;
 
-
-    public AppointmentManagerService(AppointmentRepository repo,
-                                     AvailibilityRepository availabilityRepo,
-                                     AppointmentServiceRepository ASrepo,
-                                     ServiceRepository serviceRepo) {
+    public AppointmentManagerService(
+            AppointmentRepository repo,
+            AvailibilityRepository availabilityRepo,
+            AppointmentServiceRepository ASrepo,
+            ServiceRepository serviceRepo,
+            WalkInRepository walkInRepo,
+            WalkInRequestedServiceRepository walkInServiceRepo,
+            BusinessHoursRepository businessHoursRepo
+    ) {
         this.repo = repo;
         this.availabilityRepo = availabilityRepo;
         this.ASrepo = ASrepo;
         this.serviceRepo = serviceRepo;
+        this.walkInRepo = walkInRepo;
+        this.walkInServiceRepo = walkInServiceRepo;
+        this.businessHoursRepo = businessHoursRepo;
     }
+
 
 
     public Appointment getById(Integer id) {
@@ -240,7 +253,7 @@ public class AppointmentManagerService {
     }
 
     @Transactional
-    public void create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
+    public Appointment create(CreateAppointmentDTO dto, Long customerId, BusinessHours bh) {
 
         Instant instant = Instant.parse(dto.getStart());
         LocalDateTime start =
@@ -293,6 +306,8 @@ public class AppointmentManagerService {
             as.setActualDurationMinutes(s.getTypicalDurationMinutes());
             ASrepo.save(as);
         }
+
+        return appt;
     }
 
 
@@ -341,9 +356,9 @@ public class AppointmentManagerService {
 
 	public void updateServices(Appointment appt, List<Long> serviceIds) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	private void validateNewAppointment(
 		    Integer stylistId,
 		    LocalDateTime start,
@@ -389,6 +404,50 @@ public class AppointmentManagerService {
 		        }
 		    }
 		}
+
+	@Transactional
+	public Appointment convertWalkInToAppointment(
+	    Integer walkInId,
+	    Integer stylistId,
+	    LocalDateTime start
+	) {
+	    WalkIn wi = walkInRepo.findWithServices(walkInId); // from repo query
+	    if (wi == null) {
+			throw new RuntimeException("Walk-in not found");
+		}
+
+	    // Pull service IDs from requested services
+	    // (adjust field names if yours differ)
+	    List<Long> serviceIds = walkInServiceRepo.findByWalkIn_WalkInId(walkInId).stream()
+	    	    .map(wrs -> wrs.getService().getId())
+	    	    .toList();
+
+
+	    if (serviceIds.isEmpty()) {
+	        throw new RuntimeException("Walk-in has no requested services");
+	    }
+
+	    CreateAppointmentDTO dto = new CreateAppointmentDTO();
+	    dto.setStylistId(stylistId);
+
+	    ZoneId zone = ZoneId.systemDefault();
+	    dto.setStart(start.atZone(zone).toInstant().toString());
+
+	    dto.setServiceIds(serviceIds);
+
+	    BusinessHours bh = businessHoursRepo.findById(1)
+	        .orElseThrow(() -> new RuntimeException("Business hours missing"));
+
+	    // Uses your existing availability + overlap enforcement inside create()
+	    Appointment appt = create(dto, wi.getCustomerId(), bh);
+
+	    wi.setStatus("CONVERTED");
+	    wi.setAssignedStylistId(stylistId);
+	    walkInRepo.save(wi);
+
+	    return appt;
+	}
+
 
 
 

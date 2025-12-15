@@ -8,7 +8,8 @@ import com.LilliputSalon.SalonApp.domain.Service;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
 
 public interface ServiceRepository extends JpaRepository<Service, Long> {
-	
+
+	@Override
 	List<Service> findAllById(Iterable<Long> ids);
 
     List<Service> findByIsAvailableTrue();
