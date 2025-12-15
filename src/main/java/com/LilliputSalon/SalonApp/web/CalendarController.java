@@ -26,6 +26,7 @@ import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
+import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
@@ -46,12 +47,16 @@ public class CalendarController {
 	private final UserTypeRepository userTypeRepo;
 	private final ServiceRepository serviceRepo;
 	private final WalkInRepository walkInRepo;
+	private final AppointmentRepository appointmentRepo;
+	
+	
 
 
 	public CalendarController(AppointmentManagerService appointmentService,
 			ProfileRepository profileRepo, BusinessHoursRepository businessHoursRepo,
 			UserRepository userRepo, UserTypeRepository userTypeRepo,
-			ServiceRepository serviceRepo, WalkInRepository walkInRepo) {
+			ServiceRepository serviceRepo, WalkInRepository walkInRepo,
+			AppointmentRepository appointmentRepo) {
 		this.appointmentService = appointmentService;
 		this.profileRepo = profileRepo;
 		this.businessHoursRepo = businessHoursRepo;
@@ -59,6 +64,7 @@ public class CalendarController {
 		this.userTypeRepo = userTypeRepo;
 		this.serviceRepo = serviceRepo;
 		this.walkInRepo = walkInRepo;
+		this.appointmentRepo = appointmentRepo;
 	}
 
 	@GetMapping("/calendar")
@@ -131,7 +137,7 @@ public class CalendarController {
 	@GetMapping(value = "/calendar/events", produces = "application/json")
 	public List<Map<String, Object>> getEvents() {
 
-		List<Appointment> appts = appointmentService.getAllAppointments();
+		List<Appointment> appts = appointmentRepo.findActiveAppointments();
 
 		Map<Long, Profile> profileCache = new HashMap<>();
 

@@ -50,6 +50,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    SELECT COUNT(*)
     	    FROM dbo.Appointment a
     	    WHERE a.StylistID = :stylistId
+    	      AND a.IsCompleted = 0
     	      AND a.ScheduledStartDateTime < :end
     	      AND DATEADD(MINUTE, a.DurationMinutes, a.ScheduledStartDateTime) > :start
     	      AND (:excludeId IS NULL OR a.AppointmentID <> :excludeId)
@@ -60,6 +61,15 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    @Param("end") LocalDateTime end,
     	    @Param("excludeId") Integer excludeId
     	);
+
+    
+    @Query("""
+    	    SELECT a
+    	    FROM Appointment a
+    	    WHERE a.isCompleted = false
+    	""")
+    	List<Appointment> findActiveAppointments();
+
 
 
 
