@@ -2,6 +2,7 @@ package com.LilliputSalon.SalonApp.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -34,8 +35,13 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Inte
     	      and a.isAvailable = true
     	""")
     	List<Availability> findWorkingStylistsToday(LocalDate date);
-
-
-
+    
+    @Query("""
+    	    select min(a.workDate)
+    	    from Availability a
+    	    where a.workDate >= :today
+    	      and a.isAvailable = true
+    	""")
+    	Optional<LocalDate> findFirstFutureWorkDate(LocalDate today);
 
 }

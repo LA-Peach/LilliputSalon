@@ -32,7 +32,6 @@ import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
 import com.LilliputSalon.SalonApp.repository.UserTypeRepository;
-import com.LilliputSalon.SalonApp.repository.WalkInRepository;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 
@@ -46,7 +45,6 @@ public class CalendarController {
 	private final UserRepository userRepo;
 	private final UserTypeRepository userTypeRepo;
 	private final ServiceRepository serviceRepo;
-	private final WalkInRepository walkInRepo;
 	private final AppointmentRepository appointmentRepo;
 	
 	
@@ -55,15 +53,13 @@ public class CalendarController {
 	public CalendarController(AppointmentManagerService appointmentService,
 			ProfileRepository profileRepo, BusinessHoursRepository businessHoursRepo,
 			UserRepository userRepo, UserTypeRepository userTypeRepo,
-			ServiceRepository serviceRepo, WalkInRepository walkInRepo,
-			AppointmentRepository appointmentRepo) {
+			AppointmentRepository appointmentRepo, ServiceRepository serviceRepo) {
 		this.appointmentService = appointmentService;
 		this.profileRepo = profileRepo;
 		this.businessHoursRepo = businessHoursRepo;
 		this.userRepo = userRepo;
 		this.userTypeRepo = userTypeRepo;
 		this.serviceRepo = serviceRepo;
-		this.walkInRepo = walkInRepo;
 		this.appointmentRepo = appointmentRepo;
 	}
 

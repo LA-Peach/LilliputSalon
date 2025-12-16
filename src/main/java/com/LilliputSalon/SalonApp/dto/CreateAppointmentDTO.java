@@ -10,7 +10,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class CreateAppointmentDTO {
-    private Integer stylistId;
+    private Long stylistId;
     private String start;
 
     private List<Long> serviceIds;

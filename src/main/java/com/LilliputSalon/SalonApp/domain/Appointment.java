@@ -30,7 +30,7 @@ public class Appointment {
     private Long customerId;
 
     @Column(name = "StylistID", nullable = false)
-    private Integer stylistId;
+    private Long stylistId;
 
     @Column(name = "ScheduledStartDateTime", nullable = false)
     private LocalDateTime scheduledStartDateTime;
@@ -68,4 +68,6 @@ public class Appointment {
     public int getTotalDurationMinutes() {
         return durationMinutes != null ? durationMinutes : 0;}
 
-}
+	}
+
+

@@ -14,27 +14,27 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
 
-    List<Appointment> findByCustomerId(Integer customerId);
+    List<Appointment> findByCustomerId(Long id);
 
-    List<Appointment> findByStylistId(Integer stylistId);
+    List<Appointment> findByStylistId(Long stylistId);
 
     List<Appointment> findByScheduledStartDateTimeBetween(LocalDateTime start, LocalDateTime end);
 
     List<Appointment> findByStylistIdAndScheduledStartDateTimeBetween(
-            Integer stylistId,
+            Long stylistId,
             LocalDateTime start,
             LocalDateTime end
     );
 
     // Find the earliest future appointment for this stylist
     Optional<Appointment> findFirstByStylistIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
-            Integer stylistId,
+            Long stylistId,
             LocalDateTime after
     );
 
     // Next appointment for a customer
     Optional<Appointment> findFirstByCustomerIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
-            Integer customerId,
+            Long customerId,
             LocalDateTime after
     );
 
@@ -56,7 +56,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	      AND (:excludeId IS NULL OR a.AppointmentID <> :excludeId)
     	""", nativeQuery = true)
     	int countOverlappingAppointments(
-    	    @Param("stylistId") Integer stylistId,
+    	    @Param("stylistId") Long stylistId,
     	    @Param("start") LocalDateTime start,
     	    @Param("end") LocalDateTime end,
     	    @Param("excludeId") Integer excludeId
@@ -69,9 +69,5 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    WHERE a.isCompleted = false
     	""")
     	List<Appointment> findActiveAppointments();
-
-
-
-
 
 }

@@ -3,7 +3,7 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
-    <title>My Day – Stylist</title>
+    <title>My Day</title>
     <link rel="stylesheet" href="/css/lilliputSalon.css" />
 </head>
 
@@ -15,138 +15,83 @@
 
 <main class="services-layout">
 
-    <!-- CASE 1: There ARE appointments for today -->
-    <div th:if="${isToday}">
+    <!-- PAGE TITLE -->
+    <h2 style="text-align:center;">
+        Appointments for
+        <span th:text="${#temporals.format(displayDate, 'EEEE, MMMM d, yyyy')}"></span>
+    </h2>
 
-        <h2>Appointments for <span th:text="${#temporals.format(displayDate, 'EEEE, MMMM d, yyyy')}"></span></h2>
+    <!-- NO APPOINTMENTS AT ALL -->
+    <div th:if="${appointmentsByStylist == null or appointmentsByStylist.isEmpty()}"
+         class="glass-card"
+         style="max-width:720px;">
+        <p><strong>No appointments scheduled.</strong></p>
+    </div>
 
-        <!-- Normal list of today's appointments -->
-        <div th:each="appt : ${upcomingAppointments}" class="glass-card" style="max-width:720px;">
+    <!-- LOOP PER STYLIST -->
+    <div th:each="entry : ${appointmentsByStylist}">
+
+        <!-- STYLIST HEADER (OWNER ONLY) -->
+        <h2 th:if="${isOwnerView}"
+            th:text="${entry.key.firstName}"
+            style="margin-top:32px;">
+        </h2>
+
+        <!-- LOOP PER APPOINTMENT -->
+        <div th:each="appt : ${entry.value}"
+             class="glass-card"
+             style="max-width:720px;">
+
+            <!-- HEADER -->
             <h3>
                 <span th:text="${#temporals.format(appt.scheduledStartDateTime, 'h:mm a')}"></span>
-                — <span th:text="${appt.status}"></span>
+                —
+                <span th:text="${appt.isCompleted ? 'Completed' : appt.status}"></span>
             </h3>
 
             <div class="accent-line"></div>
 
+            <!-- CLIENT -->
+            <p class="subtext">
+                <strong>Client:</strong>
+                <span th:text="${customerNames[appt.appointmentId]}"></span>
+            </p>
+
+            <!-- DURATION -->
             <p class="subtext">
                 <strong>Duration:</strong>
                 <span th:text="${appt.durationMinutes + ' min'}"></span>
             </p>
 
-            <p class="subtext">
-			    <strong>Client:</strong>
-			    <span th:text="${customerNames[appt.appointmentId]}"></span>
-			</p>
-
-
-            <!-- SERVICES FOR THIS APPOINTMENT -->
+            <!-- SERVICES -->
             <div style="margin-top:12px;">
                 <strong>Services:</strong>
                 <ul style="list-style:none; padding-left:0; margin:8px 0;">
                     <li th:each="service : ${servicesByAppt[appt.appointmentId]}">
-					    <span th:text="${service.service.name}"></span>
-					    — <span th:text="${service.actualDurationMinutes + ' min'}"></span>
-					</li>
+                        <span th:text="${service.service.name}"></span>
+                        —
+                        <span th:text="${service.actualDurationMinutes + ' min'}"></span>
+                    </li>
                 </ul>
             </div>
-            
-            <div th:if="${!appt.isCompleted}">
-		    <form th:action="@{/stylist/completeAppointment}" method="post" style="margin-top:12px;">
-		        <input type="hidden" name="appointmentId" th:value="${appt.appointmentId}" />
-		        <button type="submit" class="btn btn-secondary">Complete Appointment</button>
-		    </form>
-			</div>
-            
-        </div>
-        
-        <div style="margin-top:32px;" th:if="${!#lists.isEmpty(completedAppointments)}">
-		    <h2>Today's Summary</h2>
-		
-		    <div th:each="appt : ${completedAppointments}"
-		         class="glass-card" style="max-width:720px;">
-		
-		        <h3>
-		            <span th:text="${#temporals.format(appt.scheduledStartDateTime, 'h:mm a')}"></span>
-		            — Completed
-		        </h3>
-		
-		        <div class="accent-line"></div>
-		
-		        <p class="subtext">
-		            <strong>Duration:</strong>
-		            <span th:text="${appt.durationMinutes + ' min'}"></span>
-		        </p>
-		
-		        <p class="subtext">
-		            <strong>Client:</strong>
-		            <span th:text="${customerNames[appt.appointmentId]}"></span>
-		        </p>
-		
-		        <div style="margin-top:12px;">
-		            <strong>Services:</strong>
-		            <ul style="list-style:none; padding-left:0; margin:8px 0;">
-		                <li th:each="service : ${servicesByAppt[appt.appointmentId]}">
-		                    <span th:text="${service.service.name}"></span>
-		                    — <span th:text="${service.actualDurationMinutes + ' min'}"></span>
-		                </li>
-		            </ul>
-		        </div>
-		
-		    </div>
-		</div>
-        
-    </div>
 
-    <!-- CASE 2: There are NO appointments today, but we loaded the next day’s appointments -->
-    <div th:if="${!isToday}">
-
-        <p><strong>No Appointments Today.</strong></p>
-
-        <!-- Only show “Next Appointment” block if there ARE upcoming appointments -->
-        <div th:if="${!#lists.isEmpty(appointments)}">
-            <h2>
-			    Next Appointment<span th:text="${appointments.size() > 1 ? 's' : ''}"></span>
-			    on <span th:text="${#temporals.format(displayDate, 'EEEE, MMMM d, yyyy')}"></span>:
-			</h2>
-
-
-            <div th:each="appt : ${appointments}" class="glass-card" style="max-width:720px;">
-                <h3>
-                    <span th:text="${#temporals.format(appt.scheduledStartDateTime, 'h:mm a')}"></span>
-                </h3>
-
-                <div class="accent-line"></div>
-
-                <div style="margin-top:8px;">
-				    <strong>Duration:</strong>
-				    <div style="margin-left:4px;"
-				         th:text="${appt.durationMinutes + ' min'}"></div>
-				</div>
-				
-				<div style="margin-top:8px;">
-				    <strong>Client:</strong>
-				    <div style="margin-left:4px;"
-				         th:text="${customerNames[appt.appointmentId]}"></div>
-				</div>
-
-                <!-- SERVICES FOR THIS APPOINTMENT -->
-                <div style="margin-top:12px;">
-                    <strong>Services:</strong>
-                    <ul style="list-style:none; padding-left:0; margin:8px 0;">
-                        <li th:each="service : ${servicesByAppt[appt.appointmentId]}">
-                            <span th:text="${service.service.name}"></span>
-                            — <span th:text="${service.actualDurationMinutes + ' min'}"></span>
-                        </li>
-                    </ul>
-                </div>
+            <!-- COMPLETE BUTTON (STYLIST ONLY, NOT COMPLETED) -->
+            <div th:if="${!appt.isCompleted and !isOwnerView}">
+                <form th:action="@{/stylist/completeAppointment}"
+                      method="post"
+                      style="margin-top:12px;">
+                    <input type="hidden"
+                           name="appointmentId"
+                           th:value="${appt.appointmentId}" />
+                    <button type="submit"
+                            class="btn btn-secondary">
+                        Complete Appointment
+                    </button>
+                </form>
             </div>
+
         </div>
 
-        <!-- Optional: if there are no future appointments at all -->
-        <div th:if="${#lists.isEmpty(appointments)}">
-            <p><em>You also have no upcoming appointments scheduled.</em></p>
-        </div>
     </div>
 
 </main>

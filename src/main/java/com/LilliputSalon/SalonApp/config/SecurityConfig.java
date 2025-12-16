@@ -58,6 +58,8 @@ public class SecurityConfig {
 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/login", "/register", "/css/**").permitAll()
+                
+                .requestMatchers("/myDay/**").hasAnyRole("STYLIST", "OWNER")
 
                 // Role-based route protections
                 .requestMatchers("/owner/**").hasRole("OWNER")

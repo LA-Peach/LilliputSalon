@@ -7,6 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -16,17 +17,17 @@ import com.LilliputSalon.SalonApp.domain.AppointmentService;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
+import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
-import com.LilliputSalon.SalonApp.domain.WalkIn;
+
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
+import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
-import com.LilliputSalon.SalonApp.repository.WalkInRepository;
-import com.LilliputSalon.SalonApp.repository.WalkInRequestedServiceRepository;
 import com.LilliputSalon.SalonApp.security.AppointmentAvailabilityException;
 import com.LilliputSalon.SalonApp.security.AppointmentOverlapException;
 
@@ -39,32 +40,26 @@ public class AppointmentManagerService {
     private final AvailibilityRepository availabilityRepo;
     private final AppointmentServiceRepository ASrepo;
     private final ServiceRepository serviceRepo;
-    private final WalkInRepository walkInRepo;
-    private final WalkInRequestedServiceRepository walkInServiceRepo;
     private final BusinessHoursRepository businessHoursRepo;
-    private final WalkInManagerService walkInManagerService;
     private final UserRepository userRepo;
+    private final ProfileRepository profileRepo;
 
     public AppointmentManagerService(
             AppointmentRepository repo,
             AvailibilityRepository availabilityRepo,
             AppointmentServiceRepository ASrepo,
             ServiceRepository serviceRepo,
-            WalkInRepository walkInRepo,
-            WalkInRequestedServiceRepository walkInServiceRepo,
             BusinessHoursRepository businessHoursRepo,
-            WalkInManagerService walkInManagerService,
-            UserRepository userRepo
+            UserRepository userRepo,
+            ProfileRepository profileRepo
     ) {
         this.repo = repo;
         this.availabilityRepo = availabilityRepo;
         this.ASrepo = ASrepo;
         this.serviceRepo = serviceRepo;
-        this.walkInRepo = walkInRepo;
-        this.walkInServiceRepo = walkInServiceRepo;
         this.businessHoursRepo = businessHoursRepo;
-        this.walkInManagerService = walkInManagerService;
         this.userRepo = userRepo;
+        this.profileRepo = profileRepo;
     }
 
 
@@ -73,12 +68,12 @@ public class AppointmentManagerService {
         return repo.findById(id).orElse(null);
     }
 
-    public List<Appointment> getByCustomer(Integer id) {
+    public List<Appointment> getByCustomer(Long id) {
         return repo.findByCustomerId(id);
     }
 
 
-    public List<Appointment> getTodayForStylist(Integer stylistId) {
+    public List<Appointment> getTodayForStylist(Long stylistId) {
         LocalDateTime start = LocalDate.now().atStartOfDay();
         LocalDateTime end = start.plusHours(23).plusMinutes(59).plusSeconds(59);
 
@@ -89,7 +84,7 @@ public class AppointmentManagerService {
         );
     }
 
-    public List<Appointment> getTodayOrNextForStylist(Integer stylistId) {
+    public List<Appointment> getTodayOrNextForStylist(Long stylistId) {
 
         LocalDate today = LocalDate.now();
 
@@ -127,14 +122,14 @@ public class AppointmentManagerService {
         );
     }
 
-    public Appointment getNextAppointmentForStylist(Integer stylistId) {
+    public Appointment getNextAppointmentForStylist(Long stylistId) {
         LocalDateTime now = LocalDateTime.now();
         return repo.findFirstByStylistIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
                 stylistId, now
         ).orElse(null);
     }
 
-    public Appointment getNextAppointmentForCustomer(Integer customerId) {
+    public Appointment getNextAppointmentForCustomer(Long customerId) {
         LocalDateTime now = LocalDateTime.now();
         return repo.findFirstByCustomerIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
                 customerId, now
@@ -173,8 +168,7 @@ public class AppointmentManagerService {
 
     	    repo.save(appt);
 
-    	    // 🔁 Close walk-in if this was from a walk-in
-    	    walkInManagerService.completeWalkInForAppointment(appt);
+    	   
     }
 
 
@@ -184,7 +178,7 @@ public class AppointmentManagerService {
 
     public String validateAppointmentMove(Appointment appt, LocalDateTime newStart, LocalDateTime newEnd) {
 
-        int stylistId = appt.getStylistId();
+        Long stylistId = appt.getStylistId();
         LocalDate date = newStart.toLocalDate();
 
         // ------------------------
@@ -380,7 +374,7 @@ public class AppointmentManagerService {
 	}
 
 	private void validateNewAppointment(
-		    Integer stylistId,
+		    Long stylistId,
 		    LocalDateTime start,
 		    LocalDateTime end
 		) {
@@ -425,48 +419,7 @@ public class AppointmentManagerService {
 		    }
 		}
 
-	@Transactional
-	public Appointment convertWalkInToAppointment(
-	    Integer walkInId,
-	    Integer stylistId,
-	    LocalDateTime start
-	) {
-	    WalkIn wi = walkInRepo.findWithServices(walkInId); // from repo query
-	    if (wi == null) {
-			throw new RuntimeException("Walk-in not found");
-		}
-
-	    // Pull service IDs from requested services
-	    // (adjust field names if yours differ)
-	    List<Long> serviceIds = walkInServiceRepo.findByWalkIn_WalkInId(walkInId).stream()
-	    	    .map(wrs -> wrs.getService().getId())
-	    	    .toList();
-
-
-	    if (serviceIds.isEmpty()) {
-	        throw new RuntimeException("Walk-in has no requested services");
-	    }
-
-	    CreateAppointmentDTO dto = new CreateAppointmentDTO();
-	    dto.setStylistId(stylistId);
-
-	    ZoneId zone = ZoneId.systemDefault();
-	    dto.setStart(start.atZone(zone).toInstant().toString());
-
-	    dto.setServiceIds(serviceIds);
-
-	    BusinessHours bh = businessHoursRepo.findById(1)
-	        .orElseThrow(() -> new RuntimeException("Business hours missing"));
-
-	    // Uses your existing availability + overlap enforcement inside create()
-	    Appointment appt = create(dto, wi.getCustomerId(), bh);
-
-	    wi.setStatus("IN_SERVICE");
-	    wi.setAssignedStylistId(stylistId);
-	    walkInRepo.save(wi);
-
-	    return appt;
-	}
+	
 	
 	private int calculatePoints(BigDecimal totalAmount) {
 	    if (totalAmount == null) return 0;
@@ -475,6 +428,76 @@ public class AppointmentManagerService {
 	        .divide(BigDecimal.valueOf(10), 0, RoundingMode.FLOOR)
 	        .intValue();
 	}
+	
+	public record StylistDayView(
+	        Profile stylist,
+	        Availability availability,
+	        List<Appointment> appointments
+	) {}
+	
+	public List<StylistDayView> getOwnerDayView() {
+
+	    LocalDate today = LocalDate.now();
+
+	    // 1️⃣ Find the first date >= today with working stylists
+	    LocalDate displayDate = availabilityRepo
+	            .findFirstFutureWorkDate(today)
+	            .orElse(today);
+
+	    // 2️⃣ Load ONLY stylists working that date
+	    List<Availability> availabilities =
+	            availabilityRepo.findByWorkDateAndIsAvailableTrue(displayDate);
+
+	    List<StylistDayView> result = new ArrayList<>();
+
+	    for (Availability availability : availabilities) {
+
+	        Profile stylistProfile =
+	                profileRepo.findByUser_Id(availability.getUser().getId())
+	                        .orElseThrow();
+
+	        // 3️⃣ Load appointments for that stylist on that day
+	        List<Appointment> appts =
+	                repo.findByStylistIdAndScheduledStartDateTimeBetween(
+	                        availability.getUser().getId(),
+	                        displayDate.atStartOfDay(),
+	                        displayDate.atTime(23, 59, 59)
+	                );
+
+	        result.add(new StylistDayView(
+	                stylistProfile,
+	                availability,
+	                appts
+	        ));
+	    }
+
+	    // Optional: sort by shift start time
+	    result.sort((a, b) ->
+	            a.availability().getDayStartTime()
+	                    .compareTo(b.availability().getDayStartTime())
+	    );
+
+	    return result;
+	}
+	
+	public List<Appointment> getAppointmentsForStylistOnDate(
+	        Long stylistUserId,
+	        LocalDate date
+	) {
+	    LocalDateTime start = date.atStartOfDay();
+	    LocalDateTime end   = date.atTime(23, 59, 59);
+
+	    return repo.findByStylistIdAndScheduledStartDateTimeBetween(
+	            stylistUserId,
+	            start,
+	            end
+	    );
+	}
+
+
+
+
+
 
 
 

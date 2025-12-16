@@ -58,7 +58,7 @@ public class HomeController {
         	Profile customerProfile = profileRepository.findByUser_Id(userId)
         	        .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        	Integer customerProfileId = customerProfile.getProfileId().intValue();
+        	Long customerProfileId = customerProfile.getProfileId();
 
         	Appointment next = appointmentService.getNextAppointmentForCustomer(customerProfileId);
 
@@ -94,7 +94,7 @@ public class HomeController {
         	Profile profile = profileRepository.findByUser_Id(userId)
         	        .orElseThrow(() -> new RuntimeException("Profile not found"));
 
-        	Integer stylistProfileId = profile.getProfileId().intValue();
+        	Long stylistProfileId = profile.getProfileId();
 
         	Appointment nextStylist = appointmentService.getNextAppointmentForStylist(stylistProfileId);
 
