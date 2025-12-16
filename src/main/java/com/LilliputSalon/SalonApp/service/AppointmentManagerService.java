@@ -497,6 +497,11 @@ public class AppointmentManagerService {
 	public Availability getAvailabilityForUserOnDate(Long userId, LocalDate date) {
 	    return availabilityRepo.findByUser_IdAndWorkDate(userId, date);
 	}
+	
+	public Long getCompletedAppointmentCountForStylist(Long stylistProfileId) {
+	    return repo.countByStylistIdAndIsCompletedTrue(stylistProfileId);
+	}
+
 
 	
 

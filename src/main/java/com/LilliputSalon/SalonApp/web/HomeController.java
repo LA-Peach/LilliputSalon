@@ -118,6 +118,14 @@ public class HomeController {
         Availability today = appointmentService.getAvailabilityForUserOnDate(userId, LocalDate.now());
 
         model.addAttribute("stylistAvailability", formatAvailability(today));
+        
+        long completedCount =
+                appointmentService.getCompletedAppointmentCountForStylist(
+                        stylistProfile.getProfileId()
+                );
+
+        model.addAttribute("completedServicesCount", completedCount);
+
     }
 
 
@@ -195,7 +203,7 @@ public class HomeController {
 
         DateTimeFormatter tf = DateTimeFormatter.ofPattern("h:mm a");
 
-        String base = a.getDayStartTime().format(tf) + " – " + a.getDayEndTime().format(tf) + "\n";
+        String base = a.getDayStartTime().format(tf) + " – " + a.getDayEndTime().format(tf);
 
         if (a.getBreakTimes() == null || a.getBreakTimes().isEmpty()) {
             return base;
@@ -215,6 +223,8 @@ public class HomeController {
 
         return base + " (" + breaks + ")";
     }
+    
+    
     
     
 }

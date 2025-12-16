@@ -69,5 +69,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    WHERE a.isCompleted = false
     	""")
     	List<Appointment> findActiveAppointments();
+    
+    Long countByStylistIdAndIsCompletedTrue(Long stylistId);
+
 
 }
