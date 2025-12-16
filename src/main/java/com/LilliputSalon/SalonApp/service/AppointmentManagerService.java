@@ -493,17 +493,12 @@ public class AppointmentManagerService {
 	            end
 	    );
 	}
+	
+	public Availability getAvailabilityForUserOnDate(Long userId, LocalDate date) {
+	    return availabilityRepo.findByUser_IdAndWorkDate(userId, date);
+	}
 
-
-
-
-
-
-
-
-
-
-
+	
 
 
 
