@@ -23,6 +23,7 @@ import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
+import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository.TopServiceCount;
 import com.LilliputSalon.SalonApp.repository.AvailibilityRepository;
 import com.LilliputSalon.SalonApp.repository.BusinessHoursRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
@@ -501,6 +502,26 @@ public class AppointmentManagerService {
 	public Long getCompletedAppointmentCountForStylist(Long stylistProfileId) {
 	    return repo.countByStylistIdAndIsCompletedTrue(stylistProfileId);
 	}
+	
+	public List<TopServiceCount> getTopServicesForStylist(Long stylistProfileId) {
+	    return ASrepo
+	            .findTopServicesForStylist(stylistProfileId)
+	            .stream()
+	            .limit(3)
+	            .toList();
+	}
+	
+	public long getAppointmentsTodayCount() {
+
+	    LocalDate today = LocalDate.now();
+
+	    LocalDateTime start = today.atStartOfDay();
+	    LocalDateTime end   = today.atTime(23, 59, 59);
+
+	    return repo.countAppointmentsToday(start, end);
+	}
+
+
 
 
 	

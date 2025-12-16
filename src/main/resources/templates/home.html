@@ -179,7 +179,6 @@
 	    <section class="glass-card home-card">
 	        <h3>Your Top Service Types</h3>
 	
-	        <p class="coming-soon">Coming Soon</p>
 	        <div class="accent-line"></div>
 	
 	        <!-- If top services exist -->
@@ -226,10 +225,80 @@
     <!-- Two-column customer widgets -->
     <div class="grid grid-2">
     
+    	<!-- Active Stylists on Staff -->
+	    <section class="glass-card home-card">
+	        <h3>Stylists Working Today</h3>
+
+		    <div class="accent-line"></div>
+		
+		    <!-- No stylists -->
+		    <div th:if="${stylistDayViews == null or #lists.isEmpty(stylistDayViews)}">
+		        <p class="subtext">No stylists scheduled today.</p>
+		    </div>
+		
+		    <!-- List stylists -->
+		    <div th:each="view : ${stylistDayViews}" style="margin-bottom:12px;">
+		
+		        <p class="subtext">
+		            <strong th:text="${view.stylist.firstName}"></strong>
+		        </p>
+		
+		        <p class="subtext">
+		            <span th:text="${view.availability.dayStartTime}"></span>
+		            —
+		            <span th:text="${view.availability.dayEndTime}"></span>
+		        </p>
+		
+		        <!-- Breaks -->
+		        <div th:if="${view.availability.breakTimes != null 
+		                     and !#lists.isEmpty(view.availability.breakTimes)}"
+		             class="subtext"
+		             style="margin-left:12px;">
+		
+		            <div th:each="b : ${view.availability.breakTimes}">
+		                Break:
+		                <span th:text="${b.breakStartTime}"></span>
+		                —
+		                <span th:text="${b.breakEndTime}"></span>
+		            </div>
+		
+		        </div>
+		
+		    </div>
+	    </section>
+	    
+	    <!-- Top Service Categories -->
+	    <section class="glass-card home-card">
+	        <h3>Top Services</h3>
+	        
+	        <div class="accent-line"></div>
+	
+	        <div th:if="${topBusinessServices != null and #lists.size(topBusinessServices) > 0}">
+	            <ul style="list-style: none; padding:0; margin:0; text-align:left; font-size:0.85rem; color:var(--muted)">
+	                <li th:each="s, i : ${topBusinessServices}"
+	                    th:if="${i.index < 3}" style="margin-bottom:4px;">
+	                    <strong th:text="${s.name}" style="color:var(--purple-1);"></strong>
+	                    — <span th:text="${s.count}"></span> performed
+	                </li>
+	            </ul>
+	        </div>
+	
+	        <div th:if="${topBusinessServices == null or #lists.size(topBusinessServices) == 0}">
+	            <p class="subtext">No top service data available.</p>
+	        </div>
+	    </section>
+	    
+	    
+	    
+	</div>
+	  
+	<!-- Two-column customer widgets -->
+    <div class="grid grid-2">
+    
     	<!-- Total Appointments Today -->
 	    <section class="glass-card home-card">
 	        <h3>Appointments Today</h3>
-	        <p class="coming-soon">Coming Soon</p>
+	        
 	        <div class="accent-line"></div>
 	
 	        <!-- If data available -->
@@ -246,37 +315,11 @@
 	            <p class="subtext">No appointment metrics available.</p>
 	        </div>
 	    </section>
-	    
-	    <!-- Active Stylists on Staff -->
-	    <section class="glass-card home-card">
-	        <h3>Active Stylists</h3>
-	        <p class="coming-soon">Coming Soon</p>
-	        <div class="accent-line"></div>
-	
-	        <div th:if="${activeStylistCount != null}">
-	            <p class="subtext">
-	                <strong th:text="${activeStylistCount}"
-	                        style="font-size:1.05rem; color:var(--purple-1)">
-	                </strong>
-	                stylists currently working
-	            </p>
-	        </div>
-	
-	        <div th:if="${activeStylistCount == null}">
-	            <p class="subtext">No stylist count data available.</p>
-	        </div>
-	    </section>
-	    
-	</div>
-	  
-	<!-- Two-column customer widgets -->
-    <div class="grid grid-2">
     	
     	<!-- Total Services Completed (All Stylists) -->
 		<section class="glass-card home-card">
 		    <h3>Total Services Completed</h3>
 		
-		    <p class="coming-soon">Coming Soon</p>
 		    <div class="accent-line"></div>
 		    <p class="subtext">Lifetime service count from all stylists</p>
 		
@@ -296,26 +339,7 @@
 		    </div>
 		</section>
     	
-    	<!-- Top Service Categories -->
-	    <section class="glass-card home-card">
-	        <h3>Top Services</h3>
-	        <p class="coming-soon">Coming Soon</p>
-	        <div class="accent-line"></div>
-	
-	        <div th:if="${topBusinessServices != null and #lists.size(topBusinessServices) > 0}">
-	            <ul style="list-style: none; padding:0; margin:0; text-align:left; font-size:0.85rem; color:var(--muted)">
-	                <li th:each="s, i : ${topBusinessServices}"
-	                    th:if="${i.index < 3}" style="margin-bottom:4px;">
-	                    <strong th:text="${s.name}" style="color:var(--purple-1);"></strong>
-	                    — <span th:text="${s.count}"></span> performed
-	                </li>
-	            </ul>
-	        </div>
-	
-	        <div th:if="${topBusinessServices == null or #lists.size(topBusinessServices) == 0}">
-	            <p class="subtext">No top service data available.</p>
-	        </div>
-	    </section>
+    	
 	    
     </div>
     	

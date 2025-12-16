@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
+import com.LilliputSalon.SalonApp.domain.AppointmentService;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
@@ -71,6 +72,20 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	List<Appointment> findActiveAppointments();
     
     Long countByStylistIdAndIsCompletedTrue(Long stylistId);
+    
+    @Query("""
+    	    SELECT COUNT(a)
+    	    FROM Appointment a
+    	    WHERE a.scheduledStartDateTime
+    	          BETWEEN :start AND :end
+    	""")
+    	long countAppointmentsToday(
+    	        LocalDateTime start,
+    	        LocalDateTime end
+    	);
+    
+
+
 
 
 }

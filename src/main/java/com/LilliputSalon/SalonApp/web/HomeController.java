@@ -53,6 +53,7 @@ public class HomeController {
 
         boolean isCustomer = hasRole(userDetails, "ROLE_CUSTOMER");
         boolean isStylist = hasRole(userDetails, "ROLE_STYLIST");
+        boolean isOwner = hasRole(userDetails, "ROLE_OWNER");
 
         if (isCustomer) {
             loadCustomerDashboard(profile, model);
@@ -60,6 +61,10 @@ public class HomeController {
 
         if (isStylist) {
             loadStylistDashboard(profile, model);
+        }
+        
+        if (isOwner) {
+        	loadOwnerDashboard(profile,model);
         }
 
         return "home";
@@ -125,6 +130,14 @@ public class HomeController {
                 );
 
         model.addAttribute("completedServicesCount", completedCount);
+        
+        model.addAttribute(
+                "topServiceTypes",
+                appointmentService.getTopServicesForStylist(
+                        stylistProfile.getProfileId()
+                )
+        );
+
 
     }
 
@@ -149,6 +162,30 @@ public class HomeController {
                 serviceName
         );
     }
+    
+    /* =========================================================
+    	OWNER DASHBOARD
+    ========================================================= */
+    private void loadOwnerDashboard(Profile stylistProfile, Model model) {
+    	model.addAttribute(
+                "appointmentsToday",
+                appointmentService.getAppointmentsTodayCount()
+        );
+    	model.addAttribute(
+    	        "stylistDayViews",
+    	        appointmentService.getOwnerDayView()
+    	    );
+    	model.addAttribute(
+    	        "totalServicesCompleted",
+    	        apptServiceRepo.countAllCompletedServices()
+    	    );
+    	model.addAttribute(
+    	        "topBusinessServices",
+    	        apptServiceRepo.findTopBusinessServices()
+    	    );
+    
+    }
+    
 
     /* =========================================================
        SHARED HELPERS
