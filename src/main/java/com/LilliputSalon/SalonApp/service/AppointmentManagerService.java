@@ -522,6 +522,40 @@ public class AppointmentManagerService {
 	}
 
 
+	@Transactional
+	public void cancelAppointment(Integer appointmentId, Long customerUserId) {
+
+	    Appointment appt = repo.findById(appointmentId)
+	            .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+	    // 🔒 Ownership check
+	    if (!appt.getCustomerId().equals(customerUserId)) {
+	        throw new SecurityException("You are not allowed to cancel this appointment.");
+	    }
+
+	    // ❌ Already completed
+	    if (Boolean.TRUE.equals(appt.getIsCompleted())) {
+	        throw new IllegalStateException("Completed appointments cannot be cancelled.");
+	    }
+
+	    LocalDateTime now = LocalDateTime.now();
+
+	    // ❌ Past appointment
+	    if (appt.getScheduledStartDateTime().isBefore(now)) {
+	        throw new IllegalStateException("Past appointments cannot be cancelled.");
+	    }
+
+	    // ❌ Within 12 hours
+	    if (appt.getScheduledStartDateTime().isBefore(now.plusHours(12))) {
+	        throw new IllegalStateException(
+	                "Appointments within 12 hours cannot be cancelled."
+	        );
+	    }
+
+	    // ✅ Safe to cancel
+	    ASrepo.deleteByAppointmentId(appointmentId);
+	    repo.delete(appt);
+	}
 
 
 	

@@ -35,12 +35,36 @@
 
     <p class="subtext">Services:</p>
     <ul class="service-list">
-	    <li th:each="as : ${servicesByAppt[appt.appointmentId]}"
-	        th:text="${as.service.name}">
-	    </li>
-	</ul>
+        <li th:each="as : ${servicesByAppt[appt.appointmentId]}"
+            th:text="${as.service.name}">
+        </li>
+    </ul>
+
+    <!-- Cancel Button -->
+    <form th:if="${appt.scheduledStartDateTime.isAfter(T(java.time.LocalDateTime).now().plusHours(12))}"
+          th:action="@{/myAppointments/cancel}"
+          method="post"
+          style="margin-top:12px;">
+
+        <input type="hidden" name="appointmentId"
+               th:value="${appt.appointmentId}" />
+
+        <button type="submit"
+                class="btn btn-secondary"
+                onclick="return confirm('Are you sure you want to cancel this appointment?');">
+            Cancel Appointment
+        </button>
+    </form>
+
+    <!-- Too close to cancel -->
+    <p th:if="${!appt.scheduledStartDateTime.isAfter(T(java.time.LocalDateTime).now().plusHours(12))}"
+       class="subtext"
+       style="margin-top:8px; font-size:0.8rem;">
+        Appointments within 12 hours cannot be cancelled.
+    </p>
 
 </div>
+
     
     <h2 style="margin-top:40px;">Past Appointments</h2>
 
