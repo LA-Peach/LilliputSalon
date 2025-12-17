@@ -760,6 +760,15 @@ button {
     top: 100px;
 }
 
+.service-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 6px 0;
+}
+
+.service-list li {
+    margin-bottom: 4px;
+}
 
 
 

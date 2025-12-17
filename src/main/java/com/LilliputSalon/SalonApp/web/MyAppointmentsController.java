@@ -40,69 +40,49 @@ public class MyAppointmentsController {
     @GetMapping("/myAppointments")
     @PreAuthorize("hasRole('CUSTOMER')")
     public String viewAppointments(
-            @AuthenticationPrincipal CustomUserDetails user,
+            @AuthenticationPrincipal CustomUserDetails userDetails,
             Model model
     ) {
+        Long userId = userDetails.getUser().getId(); // ✅ this matches Appointment.CustomerID
 
-        Profile profile = profileRepo.findByUser_Id(user.getUser().getId())
-                .orElseThrow(() -> new RuntimeException("Profile not found"));
+        List<Appointment> allAppointments = appointmentService.getByCustomer(userId);
 
-        List<Appointment> appointments =
-                appointmentService.getByCustomer(profile.getProfileId())
-                        .stream()
-                        .sorted((a, b) ->
-                                a.getScheduledStartDateTime()
-                                        .compareTo(b.getScheduledStartDateTime()))
-                        .toList();
+        LocalDateTime now = LocalDateTime.now();
+
+        List<Appointment> upcomingAppointments = allAppointments.stream()
+                .filter(a -> !Boolean.TRUE.equals(a.getIsCompleted()))
+                .filter(a -> a.getScheduledStartDateTime().isAfter(now))
+                .sorted((a, b) -> a.getScheduledStartDateTime().compareTo(b.getScheduledStartDateTime()))
+                .toList();
+
+        List<Appointment> pastAppointments = allAppointments.stream()
+                .filter(a -> Boolean.TRUE.equals(a.getIsCompleted())
+                        || a.getScheduledStartDateTime().isBefore(now))
+                .sorted((a, b) -> b.getScheduledStartDateTime().compareTo(a.getScheduledStartDateTime()))
+                .toList();
 
         Map<Integer, String> stylistNames = new HashMap<>();
         Map<Integer, List<?>> servicesByAppt = new HashMap<>();
 
-        for (Appointment appt : appointments) {
+        for (Appointment appt : allAppointments) {
+            profileRepo.findById(appt.getStylistId())
+                    .ifPresent(p -> stylistNames.put(
+                            appt.getAppointmentId(),
+                            (p.getFirstName() + " " + p.getLastName()).trim()
+                    ));
 
-            // stylist name
-            profileRepo.findById(appt.getStylistId().longValue())
-                    .ifPresent(p ->
-                            stylistNames.put(
-                                    appt.getAppointmentId(),
-                                    buildDisplayName(p, "Stylist")
-                            )
-                    );
-
-            // services
             servicesByAppt.put(
                     appt.getAppointmentId(),
-                    ASrepo.findWithServiceByAppointmentId(
-                            appt.getAppointmentId()
-                    )
+                    ASrepo.findWithServiceByAppointmentId(appt.getAppointmentId())
             );
         }
 
-        model.addAttribute("appointments", appointments);
+        model.addAttribute("upcomingAppointments", upcomingAppointments);
+        model.addAttribute("pastAppointments", pastAppointments);
         model.addAttribute("stylistNames", stylistNames);
         model.addAttribute("servicesByAppt", servicesByAppt);
 
         return "myAppointments";
-    }
-    
-    private String buildDisplayName(Profile p, String fallback) {
-        if (p == null) {
-            return fallback;
-        }
-
-        String first = p.getFirstName();
-        String last = p.getLastName();
-
-        if (first != null && !first.isBlank()
-                && last != null && !last.isBlank()) {
-            return first + " " + last;
-        }
-
-        if (first != null && !first.isBlank()) {
-            return first;
-        }
-
-        return fallback;
     }
 
 
