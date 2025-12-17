@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>My Appointments</title>
+    <link rel="stylesheet" href="/css/lilliputSalon.css" />
+</head>
+
+<body class="page-gradient">
+
+<header>
+    <div th:replace="~{fragments/customer-nav :: customerNav}"></div>
+</header>
+
+<main class="services-layout">
+
+    <h2>My Appointments</h2>
+
+    <!-- NO APPOINTMENTS -->
+    <div th:if="${#lists.isEmpty(appointments)}"
+         class="glass-card"
+         style="max-width:720px;">
+        <p class="subtext">
+            You don’t have any appointments scheduled.
+        </p>
+
+        <a href="/appointments/schedule"
+           class="btn btn-secondary"
+           style="margin-top:12px;">
+            Schedule an Appointment
+        </a>
+    </div>
+
+    <!-- APPOINTMENTS -->
+    <div th:each="appt : ${appointments}"
+         class="glass-card"
+         style="max-width:720px;">
+
+        <!-- DATE / TIME -->
+        <h3>
+            <span th:text="${#temporals.format(
+                appt.scheduledStartDateTime,
+                'EEEE, MMMM d · h:mm a'
+            )}"></span>
+        </h3>
+
+        <div class="accent-line"></div>
+
+        <!-- STYLIST -->
+        <p class="subtext">
+            <strong>Stylist:</strong>
+            <span th:text="${stylistNames[appt.appointmentId]}"></span>
+        </p>
+
+        <!-- STATUS -->
+        <p class="subtext">
+            <strong>Status:</strong>
+            <span th:text="${appt.isCompleted ? 'Completed' : appt.status}"></span>
+        </p>
+
+        <!-- DURATION -->
+        <p class="subtext">
+            <strong>Duration:</strong>
+            <span th:text="${appt.durationMinutes + ' min'}"></span>
+        </p>
+
+        <!-- SERVICES -->
+        <div style="margin-top:12px;">
+            <strong>Services:</strong>
+            <ul style="list-style:none; padding-left:0; margin:8px 0;">
+                <li th:each="s : ${servicesByAppt[appt.appointmentId]}">
+                    <span th:text="${s.service.name}"></span>
+                    —
+                    <span th:text="${s.actualDurationMinutes + ' min'}"></span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+</main>
+
+</body>
+</html>
