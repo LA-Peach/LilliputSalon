@@ -20,34 +20,44 @@
 	      class="glass-card wide">
 
 
-        <!-- SERVICES -->
-        <h3>Select Services</h3>
+       <!-- SERVICES -->
+		<h3>Select Services</h3>
 		<div class="accent-line"></div>
 		
 		<div id="serviceList">
-		    <div th:each="service : ${services}"
-		         class="service-btn"
-		         th:text="${service.name}"
-		         th:attr="data-id=${service.id}">
+		    <div th:each="cat : ${categories}"
+		         th:if="${!#lists.isEmpty(cat.services)}"
+		         class="service-category">
+		
+		        <h4 th:text="${cat.categoryName}"></h4>
+		
+		        <div class="service-grid">
+		            <button type="button"
+		                    class="service-btn"
+		                    th:each="svc : ${cat.services}"
+		                    th:if="${svc.isAvailable}"
+		                    th:text="${svc.name}"
+		                    th:attr="data-id=${svc.id}"
+		                    onclick="toggleService(this)">
+		            </button>
+		        </div>
 		    </div>
 		</div>
 		
-		<!-- Hidden inputs injected by JS -->
 		<div id="selectedServices"></div>
+		
 
 
         <!-- STYLIST -->
         <h3 style="margin-top:24px;">Choose a Stylist</h3>
         <div class="accent-line"></div>
 
-        <select name="stylistId" required class="input">
-            <option value="">Select a stylist</option>
+        <div id="stylistGrid" class="service-grid">
+		    <!-- buttons injected by JS -->
+		</div>
 
-            <option th:each="a : ${availableStylists}"
-                    th:value="${a.user.id}"
-                    th:text="${a.user.profile.firstName + ' ' + a.user.profile.lastName}">
-            </option>
-        </select>
+		
+		<input type="hidden" name="stylistId" id="selectedStylist" required>
 
         <!-- DATE -->
         <h3 style="margin-top:24px;">Choose a Date</h3>
@@ -78,41 +88,84 @@
 
 </main>
 
-</body>
-</html>
+
 
 <script>
     const selectedServiceIds = new Set();
 
-    const serviceButtons = document.querySelectorAll('.service-btn');
-    const hiddenContainer = document.getElementById('selectedServices');
+    function toggleService(btn) {
+        const serviceId = btn.dataset.id;
 
-    serviceButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const serviceId = btn.dataset.id;
+        if (selectedServiceIds.has(serviceId)) {
+            selectedServiceIds.delete(serviceId);
+            btn.classList.remove('selected');
+        } else {
+            selectedServiceIds.add(serviceId);
+            btn.classList.add('selected');
+        }
 
-            if (selectedServiceIds.has(serviceId)) {
-                selectedServiceIds.delete(serviceId);
-                btn.classList.remove('selected');
-            } else {
-                selectedServiceIds.add(serviceId);
-                btn.classList.add('selected');
-            }
+        renderHiddenInputs();
+    }
 
-            syncHiddenInputs();
-        });
-    });
-
-    function syncHiddenInputs() {
-        hiddenContainer.innerHTML = '';
+    function renderHiddenInputs() {
+        const container = document.getElementById('selectedServices');
+        container.innerHTML = '';
 
         selectedServiceIds.forEach(id => {
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'serviceIds';
             input.value = id;
-            hiddenContainer.appendChild(input);
+            container.appendChild(input);
         });
+    }
+
+    function selectStylist(btn) {
+        document.querySelectorAll('.stylist-btn.stylist-selected')
+            .forEach(b => b.classList.remove('stylist-selected'));
+
+        btn.classList.add('stylist-selected');
+
+        document.getElementById('selectedStylist').value =
+            btn.dataset.id;
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadStylists);
+
+    function loadStylists() {
+        fetch('/web/stylists')
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to load stylists');
+                return res.json();
+            })
+            .then(stylists => {
+                const grid = document.getElementById('stylistGrid');
+                grid.innerHTML = '';
+
+                stylists.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'service-btn stylist-btn';
+                    btn.textContent = `${s.firstName} ${s.lastName}`;
+                    btn.dataset.id = s.userId;
+                    btn.onclick = () => selectStylist(btn);
+
+                    grid.appendChild(btn);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    }
+
+    function selectStylist(btn) {
+        document.querySelectorAll('.stylist-btn')
+            .forEach(b => b.classList.remove('stylist-selected'));
+
+        btn.classList.add('stylist-selected');
+        document.getElementById('selectedStylist').value = btn.dataset.id;
     }
 </script>
 
+</body>
+</html>

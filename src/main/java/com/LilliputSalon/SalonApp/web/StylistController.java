@@ -12,7 +12,7 @@ import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 
 @RestController
 @RequestMapping("/web")
-@PreAuthorize("hasAnyRole('OWNER','STYLIST')")
+@PreAuthorize("hasAnyRole('OWNER','STYLIST','CUSTOMER')")
 public class StylistController {
 
     private final ProfileRepository profileRepo;

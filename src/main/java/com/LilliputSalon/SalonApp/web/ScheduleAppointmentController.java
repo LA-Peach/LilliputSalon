@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.Profile;
+import com.LilliputSalon.SalonApp.domain.ServiceCategory;
 import com.LilliputSalon.SalonApp.security.CustomUserDetails;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
+import com.LilliputSalon.SalonApp.repository.ServiceCategoryRepository;
 import com.LilliputSalon.SalonApp.repository.ServiceRepository;
 
 @Controller
@@ -23,15 +25,18 @@ public class ScheduleAppointmentController {
     private final AppointmentManagerService appointmentService;
     private final ProfileRepository profileRepo;
     private final ServiceRepository serviceRepo;
+    private final ServiceCategoryRepository SCrepo;
 
     public ScheduleAppointmentController(
             AppointmentManagerService appointmentService,
             ProfileRepository profileRepo,
-            ServiceRepository serviceRepo
+            ServiceRepository serviceRepo,
+            ServiceCategoryRepository SCrepo
     ) {
         this.appointmentService = appointmentService;
         this.profileRepo = profileRepo;
         this.serviceRepo = serviceRepo;
+        this.SCrepo = SCrepo;
     }
 
     @GetMapping("/schedule")
@@ -39,14 +44,12 @@ public class ScheduleAppointmentController {
             @AuthenticationPrincipal CustomUserDetails user,
             Model model
     ) {
-
         Profile customerProfile = profileRepo
                 .findByUser_Id(user.getUser().getId())
                 .orElseThrow();
 
         LocalDate today = LocalDate.now();
 
-        // Load available stylists TODAY (first usable date logic already exists)
         List<Availability> availableStylists =
                 appointmentService.getAllStylistShifts()
                         .stream()
@@ -54,9 +57,13 @@ public class ScheduleAppointmentController {
                         .toList();
 
         model.addAttribute("customer", customerProfile);
-        model.addAttribute("services", serviceRepo.findAll());
+        model.addAttribute("categories",
+                SCrepo.findAllWithAvailableServices());
         model.addAttribute("availableStylists", availableStylists);
 
         return "scheduleAppointment";
     }
+
+
+
 }
