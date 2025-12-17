@@ -140,8 +140,12 @@ body.page-gradient {
 /* =====================================
             GLASS CARD BASE
    ===================================== */
+.glass-card.wide {
+    max-width: 720px;
+}
 
 .glass-card {
+	width:100%;
     max-width: 440px;
     background: rgba(255, 255, 255, 0.88);
     border-radius: 16px;
@@ -152,6 +156,10 @@ body.page-gradient {
     animation: cardFade .55s ease;
     text-align: center;
     margin: 0 auto;
+}
+
+.glass-card.wide {
+    max-width: 720px;
 }
 
 .glass-card h3 {
