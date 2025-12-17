@@ -11,7 +11,11 @@ import com.LilliputSalon.SalonApp.domain.User;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private final User user;
 
     public CustomUserDetails(User user) {
         this.user = user;

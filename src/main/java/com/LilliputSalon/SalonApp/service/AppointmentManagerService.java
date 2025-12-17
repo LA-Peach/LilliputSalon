@@ -19,7 +19,6 @@ import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
-
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
@@ -169,7 +168,7 @@ public class AppointmentManagerService {
 
     	    repo.save(appt);
 
-    	   
+
     }
 
 
@@ -272,7 +271,7 @@ public class AppointmentManagerService {
 
         Instant instant = Instant.parse(dto.getStart());
         LocalDateTime start =
-            LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+            LocalDateTime.ofInstant(instant, ZoneId.systemDefault());   
 
         List<com.LilliputSalon.SalonApp.domain.Service> services =
             serviceRepo.findAllById(dto.getServiceIds());
@@ -420,22 +419,24 @@ public class AppointmentManagerService {
 		    }
 		}
 
-	
-	
+
+
 	private int calculatePoints(BigDecimal totalAmount) {
-	    if (totalAmount == null) return 0;
+	    if (totalAmount == null) {
+			return 0;
+		}
 
 	    return totalAmount
 	        .divide(BigDecimal.valueOf(10), 0, RoundingMode.FLOOR)
 	        .intValue();
 	}
-	
+
 	public record StylistDayView(
 	        Profile stylist,
 	        Availability availability,
 	        List<Appointment> appointments
 	) {}
-	
+
 	public List<StylistDayView> getOwnerDayView() {
 
 	    LocalDate today = LocalDate.now();
@@ -480,7 +481,7 @@ public class AppointmentManagerService {
 
 	    return result;
 	}
-	
+
 	public List<Appointment> getAppointmentsForStylistOnDate(
 	        Long stylistUserId,
 	        LocalDate date
@@ -494,15 +495,15 @@ public class AppointmentManagerService {
 	            end
 	    );
 	}
-	
+
 	public Availability getAvailabilityForUserOnDate(Long userId, LocalDate date) {
 	    return availabilityRepo.findByUser_IdAndWorkDate(userId, date);
 	}
-	
+
 	public Long getCompletedAppointmentCountForStylist(Long stylistProfileId) {
 	    return repo.countByStylistIdAndIsCompletedTrue(stylistProfileId);
 	}
-	
+
 	public List<TopServiceCount> getTopServicesForStylist(Long stylistProfileId) {
 	    return ASrepo
 	            .findTopServicesForStylist(stylistProfileId)
@@ -510,7 +511,7 @@ public class AppointmentManagerService {
 	            .limit(3)
 	            .toList();
 	}
-	
+
 	public long getAppointmentsTodayCount() {
 
 	    LocalDate today = LocalDate.now();
@@ -557,9 +558,75 @@ public class AppointmentManagerService {
 	    repo.delete(appt);
 	}
 
+	public List<LocalTime> getAvailableTimeSlots(
+	        LocalDate date,
+	        Long stylistId,
+	        List<Long> serviceIds
+	) {
+	    int totalMinutes = serviceRepo.findAllById(serviceIds)
+	            .stream()
+	            .mapToInt(s -> s.getTypicalDurationMinutes())
+	            .sum();
 
-	
+	    if (totalMinutes == 0) {
+	        return List.of();
+	    }
 
+	    List<Availability> availabilities = new ArrayList<>();
 
+	    if (stylistId == null) {
+	        // No stylist preference → all working stylists
+	        availabilities = availabilityRepo
+	                .findByWorkDateAndIsAvailableTrue(date);
+	    } else {
+	        // Specific stylist
+	        Availability a =
+	                availabilityRepo.findByUser_IdAndWorkDate(stylistId, date);
 
+	        if (a == null || !Boolean.TRUE.equals(a.getIsAvailable())) {
+	            return List.of(); // stylist not working → no slots
+	        }
+
+	        availabilities.add(a);
+	    }
+
+	    List<LocalTime> slots = new ArrayList<>();
+
+	    for (Availability a : availabilities) {
+
+	        LocalTime cursor = a.getDayStartTime();
+	        LocalTime end    = a.getDayEndTime();
+
+	        while (!cursor.plusMinutes(totalMinutes).isAfter(end)) {
+
+	            LocalTime slotStart = cursor;
+	            LocalTime slotEnd   = cursor.plusMinutes(totalMinutes);
+
+	            LocalDateTime start  = date.atTime(slotStart);
+	            LocalDateTime finish = start.plusMinutes(totalMinutes);
+
+	            boolean overlaps =
+	                    repo.countOverlappingAppointments(
+	                            a.getUser().getId(),
+	                            start,
+	                            finish,
+	                            null
+	                    ) > 0;
+
+	            boolean breakOverlap =
+	                    a.getBreakTimes().stream().anyMatch(b ->
+	                            slotStart.isBefore(b.getBreakEndTime()) &&
+	                            slotEnd.isAfter(b.getBreakStartTime())
+	                    );
+
+	            if (!overlaps && !breakOverlap) {
+	                slots.add(slotStart);
+	            }
+
+	            cursor = cursor.plusMinutes(15);
+	        }
+	    }
+
+	    return slots.stream().distinct().sorted().toList();
+	}
 }

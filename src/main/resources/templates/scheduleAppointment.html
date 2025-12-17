@@ -18,7 +18,9 @@
     <form method="post"
 	      action="/schedule/create"
 	      class="glass-card wide">
-
+		<input type="hidden"
+	           th:name="${_csrf.parameterName}"
+	           th:value="${_csrf.token}" />
 
        <!-- SERVICES -->
 		<h3>Select Services</h3>
@@ -57,115 +59,371 @@
 		</div>
 
 		
-		<input type="hidden" name="stylistId" id="selectedStylist" required>
+		<input type="hidden" name="stylistId" id="selectedStylist">
 
         <!-- DATE -->
         <h3 style="margin-top:24px;">Choose a Date</h3>
         <div class="accent-line"></div>
 
         <input type="date"
-               name="date"
-               class="input"
-               required />
+		       name="date"
+		       class="input"
+		       required
+		       th:attr="min=${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}" />
+
 
         <!-- TIME -->
         <h3 style="margin-top:24px;">Choose a Time</h3>
         <div class="accent-line"></div>
 
-        <input type="time"
-               name="time"
-               class="input"
-               required />
+        <div id="timeSlotSection">
+		    <div id="timeSlotMessage" class="muted-text"></div>
+		
+			   <div id="nextDatePrompt" style="display:none; margin-top:12px;">
+				    <button type="button"
+				            class="btn btn-secondary"
+				            onclick="confirmNextDateChoice(true)">
+				        Yes, show next available date
+				    </button>
+				
+				    <button type="button"
+				            class="btn btn-outline"
+				            style="margin-left:8px;"
+				            onclick="confirmNextDateChoice(false)">
+				        No, I’ll change my selection
+				    </button>
+				</div>
 
-        <!-- SUBMIT -->
-        <button type="submit"
-                class="btn btn-secondary"
-                style="margin-top:24px;">
-            Book Appointment
-        </button>
+		
+		    <div id="timeSlotGrid" class="service-grid"></div>
+		</div>
+
+		
+		<input type="hidden" name="time" id="selectedTime" required />
+
+
+        <!-- ERROR MESSAGE -->
+		<div th:if="${error}" class="error-message" style="margin-top:16px;">
+		    <p th:text="${error}"></p>
+		</div>
+		
+		<!-- SUBMIT -->
+		<button type="submit"
+		        class="btn btn-secondary"
+		        style="margin-top:16px;">
+		    Book Appointment
+		</button>
+
 
     </form>
 
 </main>
 
 
-
 <script>
-    const selectedServiceIds = new Set();
+/* ===============================
+   STATE
+================================ */
+const selectedServiceIds = new Set();
+let selectedStylistId = '';
+let selectedDate = '';
+let pendingNextDate = null;
 
-    function toggleService(btn) {
-        const serviceId = btn.dataset.id;
+const timeSlotGrid = document.getElementById('timeSlotGrid');
+const timeSlotMessage = document.getElementById('timeSlotMessage');
+const selectedTimeInput = document.getElementById('selectedTime');
+const dateInput = document.querySelector('input[name="date"]');
 
-        if (selectedServiceIds.has(serviceId)) {
-            selectedServiceIds.delete(serviceId);
-            btn.classList.remove('selected');
-        } else {
-            selectedServiceIds.add(serviceId);
-            btn.classList.add('selected');
-        }
+/* ===============================
+   SERVICES
+================================ */
+function toggleService(btn) {
+	resetNextDateUI();
+    const id = btn.dataset.id;
 
-        renderHiddenInputs();
+    if (selectedServiceIds.has(id)) {
+        selectedServiceIds.delete(id);
+        btn.classList.remove('selected');
+    } else {
+        selectedServiceIds.add(id);
+        btn.classList.add('selected');
     }
 
-    function renderHiddenInputs() {
-        const container = document.getElementById('selectedServices');
-        container.innerHTML = '';
+    renderHiddenServiceInputs();
+    tryLoadTimeSlots();
+}
 
-        selectedServiceIds.forEach(id => {
-            const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = 'serviceIds';
-            input.value = id;
-            container.appendChild(input);
-        });
+function renderHiddenServiceInputs() {
+    const container = document.getElementById('selectedServices');
+    container.innerHTML = '';
+
+    selectedServiceIds.forEach(id => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'serviceIds';
+        input.value = id;
+        container.appendChild(input);
+    });
+}
+
+function isSlotValid(dateStr, time) {
+    const now = new Date();
+
+    // Build LOCAL date (no timezone shift)
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // ✅ Future dates → always valid
+    if (selectedDate > today) {
+        return true;
     }
 
-    function selectStylist(btn) {
-        document.querySelectorAll('.stylist-btn.stylist-selected')
-            .forEach(b => b.classList.remove('stylist-selected'));
+    // 🟡 Same day → must be ≥ 15 minutes from now
+    if (selectedDate.getTime() === today.getTime()) {
+        const [h, m] = time.split(':').map(Number);
+        const slot = new Date(year, month - 1, day, h, m, 0, 0);
 
-        btn.classList.add('stylist-selected');
-
-        document.getElementById('selectedStylist').value =
-            btn.dataset.id;
+        return slot.getTime() - now.getTime() >= 15 * 60 * 1000;
     }
-    
-    document.addEventListener('DOMContentLoaded', loadStylists);
 
-    function loadStylists() {
-        fetch('/web/stylists')
-            .then(res => {
-                if (!res.ok) throw new Error('Failed to load stylists');
-                return res.json();
-            })
-            .then(stylists => {
-                const grid = document.getElementById('stylistGrid');
-                grid.innerHTML = '';
+    // ❌ Past date
+    return false;
+}
 
-                stylists.forEach(s => {
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'service-btn stylist-btn';
-                    btn.textContent = `${s.firstName} ${s.lastName}`;
-                    btn.dataset.id = s.userId;
-                    btn.onclick = () => selectStylist(btn);
 
-                    grid.appendChild(btn);
-                });
-            })
-            .catch(err => {
-                console.error(err);
+
+
+function resetNextDateUI() {
+    document.getElementById('nextDatePrompt').style.display = 'none';
+    timeSlotMessage.textContent = '';
+}
+
+
+
+
+
+/* ===============================
+   STYLISTS
+================================ */
+document.addEventListener('DOMContentLoaded', loadStylists);
+
+function loadStylists() {
+    fetch('/web/stylists')
+        .then(res => res.json())
+        .then(stylists => {
+            const grid = document.getElementById('stylistGrid');
+            grid.innerHTML = '';
+
+            stylists.forEach(s => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'service-btn stylist-btn';
+                btn.textContent = `${s.firstName} ${s.lastName}`;
+                btn.dataset.id = s.userId;
+                btn.onclick = () => selectStylist(btn);
+                grid.appendChild(btn);
             });
+        })
+        .catch(err => console.error(err));
+}
+
+function selectStylist(btn) {
+	resetNextDateUI();
+    document.querySelectorAll('.stylist-btn')
+        .forEach(b => b.classList.remove('stylist-selected'));
+
+    btn.classList.add('stylist-selected');
+    selectedStylistId = btn.dataset.id;
+    document.getElementById('selectedStylist').value = selectedStylistId;
+
+    tryLoadTimeSlots();
+}
+
+/* ===============================
+   DATE HANDLING
+================================ */
+dateInput.addEventListener('change', () => {
+	resetNextDateUI();
+    selectedDate = dateInput.value;
+    tryLoadTimeSlots();
+});
+
+/* ===============================
+   TIME SLOTS
+================================ */
+function tryLoadTimeSlots() {
+    if (!selectedDate || selectedServiceIds.size === 0) return;
+    loadTimeSlots(selectedDate);
+
+}
+
+function loadTimeSlots(date) {
+    const servicesQuery = [...selectedServiceIds]
+        .map(id => `serviceIds=${id}`)
+        .join('&');
+
+    const stylistQuery = selectedStylistId
+        ? `&stylistId=${selectedStylistId}`
+        : '';
+
+    fetch(`/web/timeslots?date=${date}${stylistQuery}&${servicesQuery}`)
+        .then(res => res.json())
+        .then(slots => renderTimeSlots(slots, date))
+        .catch(() => {
+            timeSlotMessage.textContent = 'Unable to load time slots.';
+        });
+}
+
+function renderTimeSlots(slots, date) {
+    timeSlotGrid.innerHTML = '';
+    selectedTimeInput.value = '';
+
+    const validSlots = slots.filter(s =>
+	    isSlotValid(date, s.time)
+	);
+
+
+    if (validSlots.length === 0) {
+        timeSlotMessage.innerHTML =
+            'No available times on this date.<br>Would you like to view the next available date?';
+        document.getElementById('nextDatePrompt').style.display = 'block';
+        return;
     }
 
-    function selectStylist(btn) {
-        document.querySelectorAll('.stylist-btn')
-            .forEach(b => b.classList.remove('stylist-selected'));
+    resetNextDateUI();
+    timeSlotMessage.textContent = 'Select a time';
 
-        btn.classList.add('stylist-selected');
-        document.getElementById('selectedStylist').value = btn.dataset.id;
+    validSlots.forEach(s => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'service-btn';
+        btn.textContent = formatTime(s.time);
+        btn.onclick = () => selectTime(btn, s.time);
+        timeSlotGrid.appendChild(btn);
+    });
+}
+
+
+
+
+
+function selectTime(btn, time) {
+    document.querySelectorAll('#timeSlotGrid .service-btn')
+        .forEach(b => b.classList.remove('selected'));
+
+    btn.classList.add('selected');
+    selectedTimeInput.value = time;
+}
+
+/* ===============================
+NEXT AVAILABLE DAY 
+================================ */
+
+/* Called by YES / NO buttons */
+function confirmNextDateChoice(accept) {
+ document.getElementById('nextDatePrompt').style.display = 'none';
+
+ if (!accept) {
+     timeSlotMessage.textContent =
+         'You can change the stylist, services, or date.';
+     return;
+ }
+
+ searchNextAvailableDate(new Date(selectedDate), 1);
+}
+
+function searchNextAvailableDate(date, daysAhead) {
+ if (daysAhead > 14) {
+     timeSlotMessage.textContent =
+         'No availability in the next two weeks.';
+     return;
+ }
+
+ date.setDate(date.getDate() + 1);
+ const iso = date.toISOString().split('T')[0];
+
+ const servicesQuery = [...selectedServiceIds]
+     .map(id => `serviceIds=${id}`)
+     .join('&');
+
+ const stylistQuery = selectedStylistId
+     ? `&stylistId=${selectedStylistId}`
+     : '';
+
+ fetch(`/web/timeslots?date=${iso}${stylistQuery}&${servicesQuery}`)
+     .then(r => r.json())
+     .then(slots => {
+         if (slots.length > 0) {
+             // ✅ Only now do we change the date
+             dateInput.value = iso;
+             selectedDate = iso;
+             renderTimeSlots(slots, iso);
+         } else {
+             // 🔁 Try the next day (ONE request at a time)
+             searchNextAvailableDate(date, daysAhead + 1);
+         }
+     })
+     .catch(() => {
+         timeSlotMessage.textContent =
+             'Unable to search future availability.';
+     });
+}
+
+
+
+
+
+/* ===============================
+   UTIL
+================================ */
+function formatTime(time) {
+    const [h, m] = time.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    return `${displayHour}:${m} ${ampm}`;
+}
+
+
+document.querySelector('form[action="/schedule/create"]')
+.addEventListener('submit', function (e) {
+
+    const date = document.querySelector('input[name="date"]').value;
+    const time = document.getElementById('selectedTime').value;
+
+    // If something is missing, let normal validation handle it
+    if (!date || !time) return;
+
+    const now = new Date();
+    const [h, m] = time.split(':').map(Number);
+
+    const appointmentTime = new Date(date);
+    appointmentTime.setHours(h, m, 0, 0);
+
+    const diffMs = appointmentTime.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    // ⚠️ Within next 12 hours → warn customer
+    if (diffHours > 0 && diffHours <= 12) {
+        const confirmed = confirm(
+            'This appointment is within the next 12 hours.\n\n' +
+            'You will NOT be able to cancel it once booked.\n\n' +
+            'Do you want to continue?'
+        );
+
+        if (!confirmed) {
+            e.preventDefault(); // ❌ stop submission
+        }
     }
+});
+
 </script>
+
+
 
 </body>
 </html>

@@ -14,11 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.LilliputSalon.SalonApp.domain.Appointment;
-import com.LilliputSalon.SalonApp.domain.Profile;
+import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.security.CustomUserDetails;
 import com.LilliputSalon.SalonApp.service.AppointmentManagerService;
-import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 
 @Controller
 @PreAuthorize("hasRole('CUSTOMER')")
@@ -27,7 +26,7 @@ public class MyAppointmentsController {
     private final AppointmentManagerService appointmentService;
     private final ProfileRepository profileRepo;
     private final AppointmentServiceRepository ASrepo;
-    
+
 
     public MyAppointmentsController(
             AppointmentManagerService appointmentService,
@@ -86,7 +85,7 @@ public class MyAppointmentsController {
 
         return "myAppointments";
     }
-    
+
     @PostMapping("/myAppointments/cancel")
     @PreAuthorize("hasRole('CUSTOMER')")
     public String cancelAppointment(
