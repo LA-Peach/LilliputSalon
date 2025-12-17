@@ -382,7 +382,7 @@ public class AppointmentManagerService {
 
 		    Availability availability =
 		        availabilityRepo.findByUser_IdAndWorkDate(
-		            stylistId.longValue(), date
+		            stylistId, date
 		        );
 
 		    if (availability == null) {

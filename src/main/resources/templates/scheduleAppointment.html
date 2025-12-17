@@ -388,26 +388,35 @@ function formatTime(time) {
     return `${displayHour}:${m} ${ampm}`;
 }
 
-
-document.querySelector('form[action="/schedule/create"]')
+document
+.querySelector('form[action="/schedule/create"]')
 .addEventListener('submit', function (e) {
 
-    const date = document.querySelector('input[name="date"]').value;
+    const dateStr = document.querySelector('input[name="date"]').value;
     const time = document.getElementById('selectedTime').value;
 
-    // If something is missing, let normal validation handle it
-    if (!date || !time) return;
+    if (!dateStr || !time) return;
 
     const now = new Date();
+
+    // ✅ Build LOCAL appointment datetime (no UTC shift)
+    const [year, month, day] = dateStr.split('-').map(Number);
     const [h, m] = time.split(':').map(Number);
 
-    const appointmentTime = new Date(date);
-    appointmentTime.setHours(h, m, 0, 0);
+    const appointmentTime = new Date(
+        year,
+        month - 1,
+        day,
+        h,
+        m,
+        0,
+        0
+    );
 
-    const diffMs = appointmentTime.getTime() - now.getTime();
-    const diffHours = diffMs / (1000 * 60 * 60);
+    const diffHours =
+        (appointmentTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-    // ⚠️ Within next 12 hours → warn customer
+    // ⚠️ Within next 12 hours
     if (diffHours > 0 && diffHours <= 12) {
         const confirmed = confirm(
             'This appointment is within the next 12 hours.\n\n' +
@@ -420,6 +429,8 @@ document.querySelector('form[action="/schedule/create"]')
         }
     }
 });
+
+
 
 </script>
 
