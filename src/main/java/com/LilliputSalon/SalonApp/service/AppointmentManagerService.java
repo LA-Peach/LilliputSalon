@@ -20,6 +20,7 @@ import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
+import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository.TopServiceCount;
@@ -679,5 +680,90 @@ public class AppointmentManagerService {
 
 	    return null; // none available
 	}
+	
+	public WaitTimeDTO calculateWalkInWaitTime() {
+
+	    LocalDate today = LocalDate.now();
+	    LocalDateTime now = LocalDateTime.now();
+
+	    List<Availability> availabilities =
+	            availabilityRepo.findByWorkDateAndIsAvailableTrue(today);
+
+	    LocalDateTime bestTime = null;
+	    Profile bestStylist = null;
+
+	    for (Availability a : availabilities) {
+
+	        LocalDateTime cursor = LocalDateTime.of(today, a.getDayStartTime());
+
+	        if (cursor.isBefore(now)) {
+	            cursor = now;
+	        }
+
+	        // 2️⃣ Load today's appointments sorted
+	        List<Appointment> appts =
+	                repo.findByStylistIdAndScheduledStartDateTimeBetween(
+	                        a.getUser().getId(),
+	                        today.atStartOfDay(),
+	                        today.atTime(23, 59, 59)
+	                ).stream()
+	                 .sorted((x, y) ->
+	                        x.getScheduledStartDateTime()
+	                         .compareTo(y.getScheduledStartDateTime()))
+	                 .toList();
+
+	        // 3️⃣ Walk appointments
+	        for (Appointment appt : appts) {
+
+	            LocalDateTime apptStart = appt.getScheduledStartDateTime();
+	            LocalDateTime apptEnd =
+	                    apptStart.plusMinutes(appt.getDurationMinutes());
+
+	            // If cursor overlaps appointment → jump to end
+	            if (!cursor.isAfter(apptEnd) && cursor.isBefore(apptEnd)) {
+	                if (cursor.isBefore(apptStart)) {
+	                    break; // free before this appointment
+	                }
+	                cursor = apptEnd;
+	            }
+	        }
+
+	        // 4️⃣ Skip breaks
+	        for (BreakTime b : a.getBreakTimes()) {
+	            LocalDateTime breakStart = LocalDateTime.of(today, b.getBreakStartTime());
+	            LocalDateTime breakEnd   = LocalDateTime.of(today, b.getBreakEndTime());
+
+	            if (!cursor.isBefore(breakStart) && cursor.isBefore(breakEnd)) {
+	                cursor = breakEnd;
+	            }
+	        }
+
+	        // 5️⃣ Must still be within shift
+	        if (cursor.toLocalTime().isAfter(a.getDayEndTime())) {
+	            continue;
+	        }
+
+	        // 6️⃣ Pick earliest free stylist
+	        if (bestTime == null || cursor.isBefore(bestTime)) {
+	            bestTime = cursor;
+	            bestStylist =
+	                    profileRepo.findByUser_Id(a.getUser().getId()).orElse(null);
+	        }
+	    }
+
+	    if (bestTime == null || bestStylist == null) {
+	        return new WaitTimeDTO(0, null, null);
+	    }
+
+	    int minutes =
+	            Math.max(0, (int) java.time.Duration.between(now, bestTime).toMinutes());
+
+	    return new WaitTimeDTO(
+	            minutes,
+	            bestStylist.getFirstName(),
+	            bestTime.toLocalTime()
+	    );
+	}
+
 
 }

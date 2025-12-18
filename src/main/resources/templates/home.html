@@ -37,14 +37,22 @@
     <!-- Walk-In Wait Time -->
     <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
-        <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
-        <p class="subtext">Real-time estimate based on appointments</p>
+        
+        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+	        <p>
+	            Approx.
+	            <strong th:text="${walkInWait.minutes}"></strong> minutes
+	        </p>
+	    </div>
+	
+	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
+	        <p>No wait — a stylist is available now!</p>
+	    </div>
     </section>
 
     <!-- Two-column customer widgets -->
     <div class="grid grid-2">
-
        <section class="glass-card home-card">
 		    <h3>Your Next Appointment</h3>
 		    <div class="accent-line"></div>
@@ -56,7 +64,7 @@
 		            <span th:text="' · ' + ${nextAppointment.providerName}"></span>
 		            <span th:text="' · ' + ${nextAppointment.serviceName}"></span>
 		        </p>
-		        <a class="btn btn-secondary" href="/appointments" role="button">View / Manage</a>
+		        <a class="btn btn-secondary" href="/myAppointments" role="button">View / Manage</a>
 		    </div>
 		
 		    <!-- No appointment -->
@@ -90,9 +98,26 @@
     <!-- Walk-In Wait Time -->
     <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
-        <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
-        <p class="subtext">Real-time estimate based on appointments</p>
+        
+        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+	        <p>
+	            Estimated wait: 
+	            <strong th:text="${walkInWait.minutes}"></strong> minutes
+	        </p>
+	        <p>
+	            Next free stylist: 
+	            <strong th:text="${walkInWait.stylistName}"></strong>
+	        </p>
+	        <p>
+	            Set appointment time for 
+	            <strong th:text="${#temporals.format(walkInWait.availableAt, 'h:mm a')}"></strong>
+	        </p>
+	    </div>
+	
+	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
+	        <p >No walk-in wait at the moment.</p>
+	    </div>
     </section>
     
      <!-- Two-column customer widgets -->
@@ -217,9 +242,26 @@
 
     <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
-        <p class="coming-soon">Coming Soon</p>
         <div class="accent-line"></div>
-        <p class="subtext">Real-time estimate based on appointments</p>
+        
+        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+	        <p>
+	            Estimated wait: 
+	            <strong th:text="${walkInWait.minutes}"></strong> minutes
+	        </p>
+	        <p>
+	            Next free stylist: 
+	            <strong th:text="${walkInWait.stylistName}"></strong>
+	        </p>
+	        <p>
+	            Set appointment time for 
+	            <strong th:text="${#temporals.format(walkInWait.availableAt, 'h:mm a')}"></strong>
+	        </p>
+	    </div>
+	
+	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
+	        <p>Immediate availability — no wait time.</p>
+	    </div>
     </section>
     
     <!-- Two-column customer widgets -->

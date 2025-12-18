@@ -17,6 +17,7 @@ import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.NextAppointmentDTO;
+import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.security.CustomUserDetails;
@@ -50,7 +51,12 @@ public class HomeController {
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         model.addAttribute("firstName", profile.getFirstName());
-
+        
+        model.addAttribute(
+                "walkInWait",
+                appointmentService.calculateWalkInWaitTime()
+            );
+        
         boolean isCustomer = hasRole(userDetails, "ROLE_CUSTOMER");
         boolean isStylist = hasRole(userDetails, "ROLE_STYLIST");
         boolean isOwner = hasRole(userDetails, "ROLE_OWNER");
