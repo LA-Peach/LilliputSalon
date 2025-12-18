@@ -95,6 +95,20 @@ public class ScheduleAppointmentController {
         LocalDate selectedDate = LocalDate.parse(date);
         LocalTime selectedTime = LocalTime.parse(time);
         LocalDateTime startDateTime = LocalDateTime.of(selectedDate, selectedTime);
+        
+     // If customer didn't choose a stylist, auto-assign one that can take this slot
+        if (stylistId == null) {
+            Long assigned = appointmentService.findAvailableStylistForSlot(
+                    selectedDate, selectedTime, serviceIds
+            );
+
+            if (assigned == null) {
+                return reloadWithError(model, user,
+                        "No stylists are available at that time. Please choose a different time.");
+            }
+
+            stylistId = assigned;
+        }
 
         LocalDateTime now = LocalDateTime.now();
 

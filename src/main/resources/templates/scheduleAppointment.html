@@ -15,7 +15,8 @@
 
     <h2>Schedule an Appointment</h2>
 
-    <form method="post"
+    <form id="scheduleForm"
+    	  method="post"
 	      action="/schedule/create"
 	      class="glass-card wide">
 		<input type="hidden"
@@ -388,49 +389,38 @@ function formatTime(time) {
     return `${displayHour}:${m} ${ampm}`;
 }
 
-document
-.querySelector('form[action="/schedule/create"]')
-.addEventListener('submit', function (e) {
+document.addEventListener('DOMContentLoaded', () => {
+	  const form = document.getElementById('scheduleForm');
+	  if (!form) return;
 
-    const dateStr = document.querySelector('input[name="date"]').value;
-    const time = document.getElementById('selectedTime').value;
+	  form.addEventListener('submit', (e) => {
+	    const dateStr = document.querySelector('input[name="date"]').value;
+	    const timeStr = document.getElementById('selectedTime').value;
 
-    if (!dateStr || !time) return;
+	    if (!dateStr || !timeStr) return;
 
-    const now = new Date();
+	    // build LOCAL datetime (avoid timezone issues)
+	    const [year, month, day] = dateStr.split('-').map(Number);
+	    const [h, m] = timeStr.split(':').map(Number);
+	    const appointmentTime = new Date(year, month - 1, day, h, m, 0, 0);
 
-    // ✅ Build LOCAL appointment datetime (no UTC shift)
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const [h, m] = time.split(':').map(Number);
+	    const now = new Date();
+	    const diffHours = (appointmentTime - now) / (1000 * 60 * 60);
 
-    const appointmentTime = new Date(
-        year,
-        month - 1,
-        day,
-        h,
-        m,
-        0,
-        0
-    );
+	    if (diffHours > 0 && diffHours <= 12) {
+	      const ok = confirm(
+	        'This appointment is within the next 12 hours.\n\n' +
+	        'You will NOT be able to cancel it once booked.\n\n' +
+	        'Do you want to continue?'
+	      );
 
-    const diffHours =
-        (appointmentTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    // ⚠️ Within next 12 hours
-    if (diffHours > 0 && diffHours <= 12) {
-        const confirmed = confirm(
-            'This appointment is within the next 12 hours.\n\n' +
-            'You will NOT be able to cancel it once booked.\n\n' +
-            'Do you want to continue?'
-        );
-
-        if (!confirmed) {
-            e.preventDefault(); // ❌ stop submission
-        }
-    }
-});
-
-
+	      if (!ok) {
+	        e.preventDefault();
+	        e.stopImmediatePropagation();
+	      }
+	    }
+	  }, true); // capture phase helps if something else submits first
+	});
 
 </script>
 

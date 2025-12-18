@@ -629,4 +629,55 @@ public class AppointmentManagerService {
 
 	    return slots.stream().distinct().sorted().toList();
 	}
+	
+	public Long findAvailableStylistForSlot(
+	        LocalDate date,
+	        LocalTime startTime,
+	        List<Long> serviceIds
+	) {
+	    int totalMinutes = serviceRepo.findAllById(serviceIds)
+	            .stream()
+	            .mapToInt(s -> s.getTypicalDurationMinutes())
+	            .sum();
+
+	    if (totalMinutes <= 0) return null;
+
+	    LocalDateTime start = date.atTime(startTime);
+	    LocalDateTime end   = start.plusMinutes(totalMinutes);
+
+	    // All working stylists that day
+	    List<Availability> availabilities =
+	            availabilityRepo.findByWorkDateAndIsAvailableTrue(date);
+
+	    for (Availability a : availabilities) {
+	        // within hours
+	        if (startTime.isBefore(a.getDayStartTime()) ||
+	            startTime.plusMinutes(totalMinutes).isAfter(a.getDayEndTime())) {
+	            continue;
+	        }
+
+	        // not on break
+	        boolean breakOverlap = a.getBreakTimes().stream().anyMatch(b ->
+	                startTime.isBefore(b.getBreakEndTime()) &&
+	                startTime.plusMinutes(totalMinutes).isAfter(b.getBreakStartTime())
+	        );
+	        if (breakOverlap) continue;
+
+	        // not overlapping appointments
+	        boolean overlaps =
+	                repo.countOverlappingAppointments(
+	                        a.getUser().getId(),
+	                        start,
+	                        end,
+	                        null
+	                ) > 0;
+
+	        if (!overlaps) {
+	            return a.getUser().getId(); // ✅ first available stylist
+	        }
+	    }
+
+	    return null; // none available
+	}
+
 }
