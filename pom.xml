@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0</version>
+		<version>3.3.5</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.LilliputSalon</groupId>
@@ -79,7 +79,16 @@
     	<groupId>org.thymeleaf.extras</groupId>
     	<artifactId>thymeleaf-extras-springsecurity6</artifactId>
     </dependency>
-  </dependencies>
+
+  
+  <!-- PostgreSQL JDBC driver -->
+	<dependency>
+	  <groupId>org.postgresql</groupId>
+	  <artifactId>postgresql</artifactId>
+	  <scope>runtime</scope>
+	</dependency>
+</dependencies>
+  
 
   <build>
     <plugins>
