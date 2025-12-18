@@ -2,6 +2,7 @@ package com.LilliputSalon.SalonApp.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
+import com.LilliputSalon.SalonApp.dto.WalkInStatus;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository.TopServiceCount;
@@ -686,84 +688,103 @@ public class AppointmentManagerService {
 	    LocalDate today = LocalDate.now();
 	    LocalDateTime now = LocalDateTime.now();
 
-	    List<Availability> availabilities =
-	            availabilityRepo.findByWorkDateAndIsAvailableTrue(today);
+	    int dbDay = toDbDayOfWeek(today);
+	    BusinessHours bh = businessHoursRepo.findByDayOfWeek(dbDay);
 
-	    LocalDateTime bestTime = null;
-	    Profile bestStylist = null;
+	    if (bh == null || Boolean.TRUE.equals(bh.getIsClosed())) {
+	        return new WaitTimeDTO(WalkInStatus.CLOSED, 0, null, null, List.of());
+	    }
+
+	    LocalTime nowTime = now.toLocalTime();
+	    if (nowTime.isBefore(bh.getOpenTime()) || nowTime.isAfter(bh.getCloseTime())) {
+	        return new WaitTimeDTO(WalkInStatus.CLOSED, 0, null, null, List.of());
+	    }
+
+	    List<Availability> availabilities =
+	        availabilityRepo.findByWorkDateAndIsAvailableTrue(today);
+
+	    if (availabilities.isEmpty()) {
+	        return new WaitTimeDTO(WalkInStatus.FULL_TODAY, 0, null, null, List.of());
+	    }
+
+	    List<String> availableNow = new ArrayList<>();
+	    LocalDateTime earliestNext = null;
+	    String nextStylist = null;
 
 	    for (Availability a : availabilities) {
 
-	        LocalDateTime cursor = LocalDateTime.of(today, a.getDayStartTime());
+	        if (nowTime.isBefore(a.getDayStartTime()) ||
+	            nowTime.isAfter(a.getDayEndTime())) continue;
 
-	        if (cursor.isBefore(now)) {
-	            cursor = now;
-	        }
+	        boolean onBreak = a.getBreakTimes().stream().anyMatch(b ->
+	            nowTime.isAfter(b.getBreakStartTime()) &&
+	            nowTime.isBefore(b.getBreakEndTime())
+	        );
+	        if (onBreak) continue;
 
-	        // 2️⃣ Load today's appointments sorted
-	        List<Appointment> appts =
-	                repo.findByStylistIdAndScheduledStartDateTimeBetween(
-	                        a.getUser().getId(),
-	                        today.atStartOfDay(),
-	                        today.atTime(23, 59, 59)
-	                ).stream()
-	                 .sorted((x, y) ->
-	                        x.getScheduledStartDateTime()
-	                         .compareTo(y.getScheduledStartDateTime()))
-	                 .toList();
+	        boolean busyNow =
+	            repo.countOverlappingAppointments(
+	                a.getUser().getId(),
+	                now,
+	                now.plusSeconds(1),
+	                null
+	            ) > 0;
 
-	        // 3️⃣ Walk appointments
-	        for (Appointment appt : appts) {
-
-	            LocalDateTime apptStart = appt.getScheduledStartDateTime();
-	            LocalDateTime apptEnd =
-	                    apptStart.plusMinutes(appt.getDurationMinutes());
-
-	            // If cursor overlaps appointment → jump to end
-	            if (!cursor.isAfter(apptEnd) && cursor.isBefore(apptEnd)) {
-	                if (cursor.isBefore(apptStart)) {
-	                    break; // free before this appointment
-	                }
-	                cursor = apptEnd;
-	            }
-	        }
-
-	        // 4️⃣ Skip breaks
-	        for (BreakTime b : a.getBreakTimes()) {
-	            LocalDateTime breakStart = LocalDateTime.of(today, b.getBreakStartTime());
-	            LocalDateTime breakEnd   = LocalDateTime.of(today, b.getBreakEndTime());
-
-	            if (!cursor.isBefore(breakStart) && cursor.isBefore(breakEnd)) {
-	                cursor = breakEnd;
-	            }
-	        }
-
-	        // 5️⃣ Must still be within shift
-	        if (cursor.toLocalTime().isAfter(a.getDayEndTime())) {
+	        if (!busyNow) {
+	            profileRepo.findByUser_Id(a.getUser().getId())
+	                .map(Profile::getFirstName)
+	                .ifPresent(availableNow::add);
 	            continue;
 	        }
 
-	        // 6️⃣ Pick earliest free stylist
-	        if (bestTime == null || cursor.isBefore(bestTime)) {
-	            bestTime = cursor;
-	            bestStylist =
-	                    profileRepo.findByUser_Id(a.getUser().getId()).orElse(null);
+	        Appointment next =
+	            repo.findFirstByStylistIdAndScheduledStartDateTimeAfterOrderByScheduledStartDateTimeAsc(
+	                a.getUser().getId(), now
+	            ).orElse(null);
+
+	        if (next != null) {
+	            LocalDateTime freeAt =
+	                next.getScheduledStartDateTime()
+	                    .plusMinutes(next.getDurationMinutes());
+
+	            if (earliestNext == null || freeAt.isBefore(earliestNext)) {
+	                earliestNext = freeAt;
+	                nextStylist = profileRepo
+	                        .findByUser_Id(a.getUser().getId())
+	                        .map(Profile::getFirstName)
+	                        .orElse(null);
+	            }
 	        }
 	    }
 
-	    if (bestTime == null || bestStylist == null) {
-	        return new WaitTimeDTO(0, null, null);
+	    if (!availableNow.isEmpty()) {
+	        return new WaitTimeDTO(
+	            WalkInStatus.AVAILABLE_NOW, 0, null, null, availableNow
+	        );
 	    }
 
-	    int minutes =
-	            Math.max(0, (int) java.time.Duration.between(now, bestTime).toMinutes());
+	    if (earliestNext != null) {
+	        int minutes = (int) Duration.between(now, earliestNext).toMinutes();
+	        return new WaitTimeDTO(
+	            WalkInStatus.WAIT,
+	            Math.max(0, minutes),
+	            nextStylist,
+	            earliestNext.toLocalTime(),
+	            List.of()
+	        );
+	    }
 
-	    return new WaitTimeDTO(
-	            minutes,
-	            bestStylist.getFirstName(),
-	            bestTime.toLocalTime()
-	    );
+	    return new WaitTimeDTO(WalkInStatus.FULL_TODAY, 0, null, null, List.of());
 	}
+
+	
+	private int toDbDayOfWeek(LocalDate date) {
+	    int javaValue = date.getDayOfWeek().getValue(); // 1–7
+	    return javaValue % 7; // Sunday(7) → 0
+	}
+
+
+
 
 
 }

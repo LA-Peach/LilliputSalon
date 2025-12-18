@@ -39,15 +39,33 @@
         <h3>Walk-In Wait Time</h3>
         <div class="accent-line"></div>
         
-        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+        <!-- AVAILABLE NOW -->
+	    <div th:if="${walkInWait.status.name() == 'AVAILABLE_NOW'}">
+	        <p>No wait — a stylist is available now!</p>
+	    </div>
+	
+	    <!-- WAIT -->
+	    <div th:if="${walkInWait.status.name() == 'WAIT'}">
 	        <p>
 	            Approx.
 	            <strong th:text="${walkInWait.minutes}"></strong> minutes
 	        </p>
 	    </div>
 	
-	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
-	        <p>No wait — a stylist is available now!</p>
+	    <!-- FULL TODAY -->
+	    <div th:if="${walkInWait.status.name() == 'FULL_TODAY'}">
+	        <p>No walk-ins available today.</p>
+	        <a class="btn btn-secondary" href="/schedule">
+	            Schedule an Appointment
+	        </a>
+	    </div>
+	
+	    <!-- CLOSED -->
+	    <div th:if="${walkInWait.status.name() == 'CLOSED'}">
+	        <p>Closed — please schedule an appointment.</p>
+	        <a class="btn btn-secondary" href="/schedule">
+	            Schedule an Appointment
+	        </a>
 	    </div>
     </section>
 
@@ -100,23 +118,47 @@
         <h3>Walk-In Wait Time</h3>
         <div class="accent-line"></div>
         
-        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+       <!-- AVAILABLE NOW -->
+	    <div th:if="${walkInWait.status.name() == 'AVAILABLE_NOW'}">
+		    <p>
+			    No wait — stylist(s) available now:
+			    <span th:each="name, iter : ${walkInWait.availableStylists}">
+			        <strong th:text="${name}"></strong>
+			        <span th:if="${!iter.last}">, </span>
+			    </span>
+			</p>
+		    <a class="btn btn-primary" href="/calendar">Schedule Now</a>
+		</div>
+	
+	    <!-- WAIT -->
+	    <div th:if="${walkInWait.status.name() == 'WAIT'}">
 	        <p>
-	            Estimated wait: 
+	            Approx.
 	            <strong th:text="${walkInWait.minutes}"></strong> minutes
 	        </p>
 	        <p>
-	            Next free stylist: 
+	            Next available stylist:
 	            <strong th:text="${walkInWait.stylistName}"></strong>
-	        </p>
-	        <p>
-	            Set appointment time for 
+	            at
 	            <strong th:text="${#temporals.format(walkInWait.availableAt, 'h:mm a')}"></strong>
 	        </p>
+	        <a class="btn btn-secondary" href="/calendar">Schedule Appointment</a>
 	    </div>
 	
-	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
-	        <p >No walk-in wait at the moment.</p>
+	    <!-- FULL TODAY -->
+	    <div th:if="${walkInWait.status.name() == 'FULL_TODAY'}">
+	        <p>No walkins available today.</p>
+	        <a class="btn btn-secondary" href="/calendar">
+	            Schedule an Appointment
+	        </a>
+	    </div>
+	
+	    <!-- CLOSED -->
+	    <div th:if="${walkInWait.status.name() == 'CLOSED'}">
+	        <p>Closed</p>
+	        <a class="btn btn-secondary" href="/calendar">
+	            Schedule an Appointment
+	        </a>
 	    </div>
     </section>
     
@@ -240,27 +282,52 @@
 
     <h2 th:text="'Welcome Back, ' + (${firstName} ?: 'Owner')"></h2>
 
+    <!-- Walk-In Wait Time -->
     <section class="glass-card home-card">
         <h3>Walk-In Wait Time</h3>
         <div class="accent-line"></div>
         
-        <div th:if="${walkInWait != null and walkInWait.minutes > 0}">
+       <!-- AVAILABLE NOW -->
+	    <div th:if="${walkInWait.status.name() == 'AVAILABLE_NOW'}">
+		    <p>
+			    No wait — stylist(s) available now:
+			    <span th:each="name, iter : ${walkInWait.availableStylists}">
+			        <strong th:text="${name}"></strong>
+			        <span th:if="${!iter.last}">, </span>
+			    </span>
+			</p>
+		    <a class="btn btn-primary" href="/calendar">Schedule Now</a>
+		</div>
+	
+	    <!-- WAIT -->
+	    <div th:if="${walkInWait.status.name() == 'WAIT'}">
 	        <p>
-	            Estimated wait: 
+	            Approx.
 	            <strong th:text="${walkInWait.minutes}"></strong> minutes
 	        </p>
 	        <p>
-	            Next free stylist: 
+	            Next available stylist:
 	            <strong th:text="${walkInWait.stylistName}"></strong>
-	        </p>
-	        <p>
-	            Set appointment time for 
+	            at
 	            <strong th:text="${#temporals.format(walkInWait.availableAt, 'h:mm a')}"></strong>
 	        </p>
+	        <a class="btn btn-secondary" href="/calendar">Schedule Appointment</a>
 	    </div>
 	
-	    <div th:if="${walkInWait == null or walkInWait.minutes == 0}">
-	        <p>Immediate availability — no wait time.</p>
+	    <!-- FULL TODAY -->
+	    <div th:if="${walkInWait.status.name() == 'FULL_TODAY'}">
+	        <p>No walkins available today.</p>
+	        <a class="btn btn-secondary" href="/calendar">
+	            Schedule an Appointment
+	        </a>
+	    </div>
+	
+	    <!-- CLOSED -->
+	    <div th:if="${walkInWait.status.name() == 'CLOSED'}">
+	        <p>Closed</p>
+	        <a class="btn btn-secondary" href="/calendar">
+	            Schedule an Appointment
+	        </a>
 	    </div>
     </section>
     
