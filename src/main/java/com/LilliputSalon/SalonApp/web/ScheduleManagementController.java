@@ -91,7 +91,7 @@ public class ScheduleManagementController {
     @ResponseBody
     public Map<String, String> update(@RequestBody Map<String, String> body) {
         try {
-            Integer id = parseInt(body.get("id"), "id");
+            Long id = parseLong(body.get("id"), "id");
             Long stylistId = parseLong(body.get("stylistId"), "stylistId");
             String start = require(body.get("start"), "start");
             String end = require(body.get("end"), "end");
@@ -112,7 +112,7 @@ public class ScheduleManagementController {
        -------------------------------------------- */
     @DeleteMapping("/delete/{id}")
     @ResponseBody
-    public Map<String, String> delete(@PathVariable Integer id) {
+    public Map<String, String> delete(@PathVariable Long id) {
         try {
             boolean deleted = service.deleteBlock(id);
 
@@ -152,11 +152,4 @@ public class ScheduleManagementController {
         }
     }
 
-    private Integer parseInt(String val, String field) {
-        try {
-            return Integer.parseInt(require(val, field));
-        } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Invalid number for " + field);
-        }
-    }
 }

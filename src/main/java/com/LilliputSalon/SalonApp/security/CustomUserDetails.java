@@ -7,7 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -15,9 +15,9 @@ public class CustomUserDetails implements UserDetails {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private final User user;
+	private final Users user;
 
-    public CustomUserDetails(User user) {
+    public CustomUserDetails(Users user) {
         this.user = user;
     }
 
@@ -42,7 +42,7 @@ public class CustomUserDetails implements UserDetails {
         return Set.of(new SimpleGrantedAuthority(finalRole));
     }
 
-    public User getUser() {
+    public Users getUser() {
         return user;
     }
 

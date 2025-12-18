@@ -13,7 +13,7 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.AppointmentService;
 
 @Repository
-public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
+public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
     List<Appointment> findByCustomerId(Long id);
 
@@ -60,7 +60,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     	    @Param("stylistId") Long stylistId,
     	    @Param("start") LocalDateTime start,
     	    @Param("end") LocalDateTime end,
-    	    @Param("excludeId") Integer excludeId
+    	    @Param("excludeId") Long excludeId
     	);
 
     

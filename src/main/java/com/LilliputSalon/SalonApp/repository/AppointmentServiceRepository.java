@@ -10,9 +10,9 @@ import org.springframework.data.repository.query.Param;
 import com.LilliputSalon.SalonApp.domain.AppointmentService;
 import com.LilliputSalon.SalonApp.dto.ServiceCountDTO;
 
-public interface AppointmentServiceRepository extends JpaRepository<AppointmentService, Integer> {
+public interface AppointmentServiceRepository extends JpaRepository<AppointmentService, Long> {
 
-	List<AppointmentService> findByAppointment_AppointmentId(Integer appointmentId);
+	List<AppointmentService> findByAppointment_AppointmentId(Long appointmentId);
 
 	@Query("""
 		    SELECT aps
@@ -21,13 +21,13 @@ public interface AppointmentServiceRepository extends JpaRepository<AppointmentS
 		    WHERE aps.appointment.appointmentId = :appointmentId
 		""")
 		List<AppointmentService> findWithServiceByAppointmentId(
-		    @Param("appointmentId") Integer appointmentId
+		    @Param("appointmentId") Long appointmentId
 		);
 
 
 	@Modifying(clearAutomatically = true)
 	@Query("DELETE FROM AppointmentService aps WHERE aps.appointment.appointmentId = :id")
-	void deleteByAppointmentId(@Param("id") Integer id);
+	void deleteByAppointmentId(@Param("id") Long id);
 	
 	public interface TopServiceCount {
 

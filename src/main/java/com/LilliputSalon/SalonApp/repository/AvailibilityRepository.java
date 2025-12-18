@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.LilliputSalon.SalonApp.domain.Availability;
 
-public interface AvailibilityRepository extends JpaRepository<Availability, Integer> {
+public interface AvailibilityRepository extends JpaRepository<Availability, Long> {
 
     List<Availability> findByUser_Id(Long stylistId);
 
@@ -17,7 +17,7 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Inte
 
     Availability findByUser_IdAndWorkDate(Long userId, LocalDate workDate);
 
-    Availability findByAvailabilityIdAndUser_Id(Integer availabilityId, Long userId);
+    Availability findByAvailabilityIdAndUser_Id(Long availabilityId, Long userId);
 
     @Query("""
     	    select distinct a

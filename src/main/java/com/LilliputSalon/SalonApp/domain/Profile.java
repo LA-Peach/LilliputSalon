@@ -14,42 +14,42 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Profile", schema = "dbo")
+@Table(name = "profile")
 @Getter
 @Setter
 public class Profile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ProfileID")
+    @Column(name = "profile_id")
     private Long profileId;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    private Users user;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "UserTypeID", nullable = false)
+    @JoinColumn(name = "user_type_id", nullable = false)
     private UserType userType;
 
-    @Column(name = "FirstName", length = 100)
+    @Column(name = "first_name", length = 100)
     private String firstName;
 
-    @Column(name = "LastName", length = 100)
+    @Column(name = "last_name", length = 100)
     private String lastName;
 
-    @Column(name = "Phone", length = 20)
+    @Column(name = "phone", length = 20)
     private String phone;
 
-    @Column(name = "HairType", length = 50)
+    @Column(name = "hair_type", length = 50)
     private String hairType;
 
-    @Column(name = "HairLength", length = 50)
+    @Column(name = "hair_length", length = 50)
     private String hairLength;
 
-    @Column(name = "Preferences", length = 255)
+    @Column(name = "preferences", length = 255)
     private String preferences;
 
-    @Column(name = "IsActiveStylist")
+    @Column(name = "is_active_stylist")
     private Boolean isActiveStylist;
 }

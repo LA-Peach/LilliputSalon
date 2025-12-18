@@ -6,10 +6,10 @@ import lombok.Getter;
 
 @Getter
 public class CalendarEventDTO {
-    private Integer id;
+    private Long id;
     private String title;
     private String start;
     private String end;
-    private Integer stylistId;
+    private Long stylistId;
     private List<Long> serviceIds;
 }

@@ -9,13 +9,13 @@ import lombok.Data;
 @AllArgsConstructor
 public class ScheduleEventDTO {
 
-    private Integer id;
+    private Long id;
     private String title;
     private String start;
     private String end;
     private Map<String, Object> extendedProps;
 
-    public ScheduleEventDTO(Integer id, String title, String start, String end, String type, Long stylistId) {
+    public ScheduleEventDTO(Long id, String title, String start, String end, String type, Long stylistId) {
         this.id = id;
         this.title = title;
         this.start = start;

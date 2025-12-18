@@ -15,33 +15,33 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Service")
+@Table(name = "service")
 @Getter
 @Setter
-public class Service {
+public class Services {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ServiceID")
+    @Column(name = "service_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ServiceCategoryID", nullable = false)
+    @JoinColumn(name = "service_category_id", nullable = false)
     private ServiceCategory category;
 
-    @Column(name = "ServiceName", nullable = false)
+    @Column(name = "service_name", nullable = false)
     private String name;
 
-    @Column(name = "ServiceDescription")
+    @Column(name = "service_description")
     private String description;
 
-    @Column(name = "BasePrice", nullable = false)
+    @Column(name = "base_price", nullable = false)
     private BigDecimal basePrice;
 
-    @Column(name = "TypicalDurationMinutes", nullable = false)
+    @Column(name = "typical_duration_minutes", nullable = false)
     private Integer typicalDurationMinutes;
 
-    @Column(name = "IsAvailable", nullable = false)
+    @Column(name = "is_available", nullable = false)
     private Boolean isAvailable;
 
 

@@ -19,7 +19,7 @@ import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.dto.WalkInStatus;
@@ -67,7 +67,7 @@ public class AppointmentManagerService {
 
 
 
-    public Appointment getById(Integer id) {
+    public Appointment getById(Long id) {
         return repo.findById(id).orElse(null);
     }
 
@@ -148,7 +148,7 @@ public class AppointmentManagerService {
     }
 
     @Transactional
-    public void markAppointmentComplete(Integer appointmentId) {
+    public void markAppointmentComplete(Long appointmentId) {
 
     	Appointment appt = repo.findById(appointmentId)
     	        .orElseThrow(() -> new RuntimeException("Appointment not found"));
@@ -156,22 +156,10 @@ public class AppointmentManagerService {
     	    appt.setStatus("Completed");
     	    appt.setIsCompleted(true);
 
-    	    User user = userRepo.findById(appt.getCustomerId())
+    	    Users user = userRepo.findById(appt.getCustomerId())
     	        .orElse(null);
 
-    	    // 🎯 Points logic
-    	    if (user != null && Boolean.TRUE.equals(user.getIsActive())) {
-
-    	        int points = calculatePoints(appt.getTotalAmount());
-    	        appt.setPointsEarned(points);
-
-    	    } else {
-    	        appt.setPointsEarned(0);
-    	    }
-
     	    repo.save(appt);
-
-
     }
 
 
@@ -256,7 +244,7 @@ public class AppointmentManagerService {
     }
 
     @Transactional
-    public void delete(Integer appointmentId) {
+    public void delete(Long appointmentId) {
 
         Appointment appt = repo.findById(appointmentId)
             .orElseThrow(() -> new RuntimeException("Appointment not found"));
@@ -276,7 +264,7 @@ public class AppointmentManagerService {
         LocalDateTime start =
             LocalDateTime.ofInstant(instant, ZoneId.systemDefault());   
 
-        List<com.LilliputSalon.SalonApp.domain.Service> services =
+        List<com.LilliputSalon.SalonApp.domain.Services> services =
             serviceRepo.findAllById(dto.getServiceIds());
 
         if (services.isEmpty()) {
@@ -315,7 +303,7 @@ public class AppointmentManagerService {
 
         repo.save(appt);
 
-        for (com.LilliputSalon.SalonApp.domain.Service s : services) {
+        for (com.LilliputSalon.SalonApp.domain.Services s : services) {
             AppointmentService as = new AppointmentService();
             as.setAppointment(appt);
             as.setService(s);
@@ -336,7 +324,7 @@ public class AppointmentManagerService {
 
 
 	@Transactional
-	public void updateAppointment(Integer id, LocalDateTime newStart) {
+	public void updateAppointment(Long id, LocalDateTime newStart) {
 
 	    Appointment appt = repo.findById(id).orElseThrow();
 
@@ -527,7 +515,7 @@ public class AppointmentManagerService {
 
 
 	@Transactional
-	public void cancelAppointment(Integer appointmentId, Long customerUserId) {
+	public void cancelAppointment(Long appointmentId, Long customerUserId) {
 
 	    Appointment appt = repo.findById(appointmentId)
 	            .orElseThrow(() -> new RuntimeException("Appointment not found"));

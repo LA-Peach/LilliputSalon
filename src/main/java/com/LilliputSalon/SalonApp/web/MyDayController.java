@@ -185,8 +185,8 @@ public class MyDayController {
             List<Appointment> appts,
             Model model
     ) {
-        Map<Integer, String> customerNames = new HashMap<>();
-        Map<Integer, List<?>> servicesByAppt = new HashMap<>();
+        Map<Long, String> customerNames = new HashMap<>();
+        Map<Long, List<?>> servicesByAppt = new HashMap<>();
 
         for (Appointment appt : appts) {
 
@@ -197,7 +197,7 @@ public class MyDayController {
                     )
             );
 
-            profileRepo.findById(appt.getCustomerId().longValue())
+            profileRepo.findById(appt.getCustomerId())
                     .ifPresentOrElse(
                             p -> customerNames.put(
                                     appt.getAppointmentId(),
@@ -215,7 +215,7 @@ public class MyDayController {
     }
 
     @PostMapping("/stylist/completeAppointment")
-    public String completeAppointment(@RequestParam Integer appointmentId) {
+    public String completeAppointment(@RequestParam Long appointmentId) {
         appointmentService.markAppointmentComplete(appointmentId);
         return "redirect:/myDay";
     }

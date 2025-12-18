@@ -4,19 +4,19 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.LilliputSalon.SalonApp.domain.Service;
+import com.LilliputSalon.SalonApp.domain.Services;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
 
-public interface ServiceRepository extends JpaRepository<Service, Long> {
+public interface ServiceRepository extends JpaRepository<Services, Long> {
 
 	@Override
-	List<Service> findAllById(Iterable<Long> ids);
+	List<Services> findAllById(Iterable<Long> ids);
 
-    List<Service> findByIsAvailableTrue();
+    List<Services> findByIsAvailableTrue();
 
-    List<Service> findByCategory(ServiceCategory category);
+    List<Services> findByCategory(ServiceCategory category);
 
-    List<Service> findByCategoryId(Long categoryId);
+    List<Services> findByCategoryId(Long categoryId);
 
     boolean existsByNameIgnoreCase(String name);
 }

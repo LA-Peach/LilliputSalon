@@ -23,7 +23,7 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
@@ -220,7 +220,7 @@ public class CalendarController {
 	@PostMapping("/appointments/delete/{id}")
 	@ResponseBody
 	@PreAuthorize("hasAnyRole('OWNER','STYLIST')")
-	public ResponseEntity<?> deleteAppointment(@PathVariable Integer id) {
+	public ResponseEntity<?> deleteAppointment(@PathVariable Long id) {
 		try {
 			appointmentService.delete(id);
 			return ResponseEntity.ok().build();
@@ -271,7 +271,7 @@ public class CalendarController {
 		}
 
 		// create walk-in guest
-		User guestUser = new User();
+		Users guestUser = new Users();
 		guestUser.setEmail(email.trim());
 		guestUser.setIsActive(false);
 		guestUser.setPasswordHash("TEMP_GUEST");

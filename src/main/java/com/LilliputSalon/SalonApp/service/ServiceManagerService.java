@@ -22,11 +22,11 @@ public class ServiceManagerService {
         this.categoryRepo = categoryRepo;
     }
 
-    public List<com.LilliputSalon.SalonApp.domain.Service> getAllAvailable() {
+    public List<com.LilliputSalon.SalonApp.domain.Services> getAllAvailable() {
         return serviceRepo.findByIsAvailableTrue();
     }
 
-    public Optional<com.LilliputSalon.SalonApp.domain.Service> getById(Long id) {
+    public Optional<com.LilliputSalon.SalonApp.domain.Services> getById(Long id) {
         return serviceRepo.findById(id);
     }
 
@@ -38,8 +38,8 @@ public class ServiceManagerService {
         return categoryRepo.findById(id);
     }
 
-    public com.LilliputSalon.SalonApp.domain.Service save(
-            com.LilliputSalon.SalonApp.domain.Service service
+    public com.LilliputSalon.SalonApp.domain.Services save(
+            com.LilliputSalon.SalonApp.domain.Services service
     ) {
         return serviceRepo.save(service);
     }

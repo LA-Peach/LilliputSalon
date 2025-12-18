@@ -19,41 +19,38 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "Appointment", schema = "dbo")
+@Table(name = "appointment")
 public class Appointment {
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "AppointmentID")
-    private Integer appointmentId;
+    @Column(name = "appointment_id")
+    private Long appointmentId;
 
-    @Column(name = "CustomerID", nullable = false)
+    @Column(name = "customer_id", nullable = false)
     private Long customerId;
 
-    @Column(name = "StylistID", nullable = false)
+    @Column(name = "stylist_id", nullable = false)
     private Long stylistId;
 
-    @Column(name = "ScheduledStartDateTime", nullable = false)
+    @Column(name = "scheduled_start_datetime", nullable = false)
     private LocalDateTime scheduledStartDateTime;
 
-    @Column(name = "DurationMinutes", nullable = false)
+    @Column(name = "duration_minutes", nullable = false)
     private Integer durationMinutes;
 
-    @Column(name = "Status", nullable = false, length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     private String status;
 
-    @Column(name = "BaseAmount", precision = 18, scale = 2)
+    @Column(name = "base_amount", precision = 18, scale = 2)
     private BigDecimal baseAmount;
 
-    @Column(name = "DiscountAmount", precision = 18, scale = 2)
+    @Column(name = "discount_amount", precision = 18, scale = 2)
     private BigDecimal discountAmount;
 
-    @Column(name = "TotalAmount", precision = 18, scale = 2)
+    @Column(name = "total_amount", precision = 18, scale = 2)
     private BigDecimal totalAmount;
 
-    @Column(name = "PointsEarned")
-    private Integer pointsEarned;
-
-    @Column(name = "IsCompleted")
+    @Column(name = "is_completed")
     private Boolean isCompleted;
 
     @OneToMany(
@@ -62,7 +59,7 @@ public class Appointment {
     	    cascade = CascadeType.ALL,
     	    orphanRemoval = true
     	)
-    	private List<AppointmentService> appointmentServices;
+    private List<AppointmentService> appointmentServices;
 
 
     public int getTotalDurationMinutes() {

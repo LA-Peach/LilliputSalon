@@ -10,15 +10,15 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "[User_Type]")
+@Table(name = "user_type")
 @Getter @Setter
 public class UserType {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "UserTypeID")
+    @Column(name = "user_type_id")
     private Long id;
 
-    @Column(name = "TypeName", nullable = false, length = 50)
+    @Column(name = "type_name", nullable = false, length = 50)
     private String typeName;
 }

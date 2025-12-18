@@ -15,27 +15,27 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Appointment_Service", schema = "dbo")
+@Table(name = "appointment_service")
 @Getter
 @Setter
 public class AppointmentService {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "AppointmentServiceID")
-    private Integer appointmentServiceId;
+    @Column(name = "appointment_service_id")
+    private Long appointmentServiceId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "AppointmentID", nullable = false)
+    @JoinColumn(name = "appointment_id", nullable = false)
     private Appointment appointment;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ServiceID", nullable = false)
-    private Service service;
+    @JoinColumn(name = "service_id", nullable = false)
+    private Services service;
 
-    @Column(name = "ActualPrice", precision = 18, scale = 2, nullable = false)
+    @Column(name = "actual_price", precision = 18, scale = 2, nullable = false)
     private BigDecimal actualPrice;
 
-    @Column(name = "ActualDurationMinutes", nullable = false)
+    @Column(name = "actual_duration_minutes", nullable = false)
     private Integer actualDurationMinutes;
 }

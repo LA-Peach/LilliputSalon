@@ -15,25 +15,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "BreakTime", schema = "dbo")
+@Table(name = "break_time")
 @Getter @Setter
 public class BreakTime {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "BreakID")
-    private Integer breakId;
+    @Column(name = "break_id")
+    private Long breakId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "AvailabilityID", nullable = false)
+    @JoinColumn(name = "availability_id", nullable = false)
     private Availability availability;
 
-    @Column(name = "BreakStartTime", nullable = false)
+    @Column(name = "break_start_time", nullable = false)
     private LocalTime breakStartTime;
 
-    @Column(name = "BreakEndTime", nullable = false)
+    @Column(name = "break_end_time", nullable = false)
     private LocalTime breakEndTime;
 
-    @Column(name = "BreakType", length = 50)
+    @Column(name = "break_type", length = 50)
     private String breakType;
 }

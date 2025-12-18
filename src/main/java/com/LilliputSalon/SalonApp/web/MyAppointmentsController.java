@@ -62,8 +62,8 @@ public class MyAppointmentsController {
                 .sorted((a, b) -> b.getScheduledStartDateTime().compareTo(a.getScheduledStartDateTime()))
                 .toList();
 
-        Map<Integer, String> stylistNames = new HashMap<>();
-        Map<Integer, List<?>> servicesByAppt = new HashMap<>();
+        Map<Long, String> stylistNames = new HashMap<>();
+        Map<Long, List<?>> servicesByAppt = new HashMap<>();
 
         for (Appointment appt : allAppointments) {
             profileRepo.findById(appt.getStylistId())
@@ -89,7 +89,7 @@ public class MyAppointmentsController {
     @PostMapping("/myAppointments/cancel")
     @PreAuthorize("hasRole('CUSTOMER')")
     public String cancelAppointment(
-            @RequestParam Integer appointmentId,
+            @RequestParam Long appointmentId,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         appointmentService.cancelAppointment(

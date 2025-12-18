@@ -14,24 +14,24 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Business_Hours", schema = "dbo")
+@Table(name = "business_hours")
 @Getter @Setter
 public class BusinessHours {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "BusinessHoursID")
-    private Integer id;
+    @Column(name = "business_hours_id")
+    private Long id;
 
-    @Column(name = "DayOfWeek", nullable = false)
+    @Column(name = "day_of_week", nullable = false)
     private Integer dayOfWeek;
 
-    @Column(name = "OpenTime")
+    @Column(name = "open_time")
     private LocalTime openTime;
 
-    @Column(name = "CloseTime")
+    @Column(name = "close_time")
     private LocalTime closeTime;
 
-    @Column(name = "IsClosed", nullable = false)
+    @Column(name = "is_closed", nullable = false)
     private Boolean isClosed;
 }

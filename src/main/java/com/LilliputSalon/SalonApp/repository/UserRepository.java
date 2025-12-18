@@ -5,9 +5,9 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<Users, Long> {
 
 	@Query("""
 		    SELECT u FROM User u
@@ -15,7 +15,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 		    JOIN FETCH p.userType
 		    WHERE u.email = :email
 		""")
-		Optional<User> findByEmail(String email);
+		Optional<Users> findByEmail(String email);
 
 
 }

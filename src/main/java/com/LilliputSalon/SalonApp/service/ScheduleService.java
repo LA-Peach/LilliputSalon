@@ -259,7 +259,7 @@ public class ScheduleService {
     /* --------------------------------------------
        UPDATE BLOCK (drag/drop or resize)
        -------------------------------------------- */
-    public boolean updateBlock(Integer id, Long requestedStylistId, String startISO, String endISO) {
+    public boolean updateBlock(Long id, Long requestedStylistId, String startISO, String endISO) {
 
         LocalDateTime start = parseDateTime(startISO);
         LocalDateTime end = parseDateTime(endISO);
@@ -344,7 +344,7 @@ public class ScheduleService {
     /* --------------------------------------------
        DELETE BLOCK
        -------------------------------------------- */
-    public boolean deleteBlock(Integer id) {
+    public boolean deleteBlock(Long id) {
 
         if (availabilityRepo.existsById(id)) {
             availabilityRepo.deleteById(id);

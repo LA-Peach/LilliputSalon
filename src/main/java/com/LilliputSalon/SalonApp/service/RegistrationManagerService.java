@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 import com.LilliputSalon.SalonApp.domain.UserType;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
@@ -52,7 +52,7 @@ public class RegistrationManagerService {
             .orElseThrow(() -> new RuntimeException("No CUSTOMER UserType found"));
 
         // Create the user
-        User user = new User();
+        Users user = new Users();
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword())); // <-- FIXED
         user.setIsActive(true);

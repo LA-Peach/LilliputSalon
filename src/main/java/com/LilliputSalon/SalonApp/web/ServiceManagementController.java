@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.LilliputSalon.SalonApp.domain.Service;
+import com.LilliputSalon.SalonApp.domain.Services;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
 import com.LilliputSalon.SalonApp.service.ServiceManagerService;
 
@@ -46,7 +46,7 @@ public class ServiceManagementController {
         ServiceCategory category = serviceService.getCategoryById(categoryId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid category"));
 
-        Service service = new Service();
+        Services service = new Services();
         service.setCategory(category);
         service.setName(name);
         service.setDescription(description);
@@ -63,7 +63,7 @@ public class ServiceManagementController {
     @ResponseBody
     public Map<String, Object> getService(@PathVariable Long id) {
 
-        Service service = serviceService.getById(id)
+        Services service = serviceService.getById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Service not found"));
 
         Map<String, Object> data = new HashMap<>();
@@ -87,7 +87,7 @@ public class ServiceManagementController {
             @RequestParam Integer typicalDurationMinutes
     ) {
 
-        Service service = serviceService.getById(id)
+        Services service = serviceService.getById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid service ID"));
 
         ServiceCategory category = serviceService.getCategoryById(categoryId)

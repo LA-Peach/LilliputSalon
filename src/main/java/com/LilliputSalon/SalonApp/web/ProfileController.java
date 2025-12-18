@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.User;
+import com.LilliputSalon.SalonApp.domain.Users;
 import com.LilliputSalon.SalonApp.domain.UserType;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.repository.UserRepository;
@@ -50,7 +50,7 @@ public class ProfileController {
             throw new AccessDeniedException("Unauthorized");
         }
 
-        User user = userRepo.findById(userId)
+        Users user = userRepo.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         // Find existing profile or build a default one

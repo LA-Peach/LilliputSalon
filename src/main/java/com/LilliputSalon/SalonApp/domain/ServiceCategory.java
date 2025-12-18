@@ -13,26 +13,25 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "Service_Category")
+@Table(name = "service_category")
 @Getter
 @Setter
 public class ServiceCategory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ServiceCategoryID")
+    @Column(name = "service_category_id")
     private Long id;
 
-    @Column(name = "CategoryName", nullable = false)
+    @Column(name = "category_name", nullable = false)
     private String categoryName;
 
-    @Column(name = "[Description]")
+    @Column(name = "description")
     private String description;
 
-    @Column(name = "DisplayOrder")
+    @Column(name = "display_order")
     private Integer displayOrder;
 
-    // FIXED: correct import now
     @OneToMany(mappedBy = "category")
-    private List<Service> services;
+    private List<Services> services;
 }
