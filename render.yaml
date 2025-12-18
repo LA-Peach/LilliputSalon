@@ -1,4 +1,10 @@
 services:
   - type: web
-    name: test-java
+    name: lilliput-salon
     env: java
+    plan: free
+    buildCommand: ./mvnw clean package
+    startCommand: java -jar target/*.jar
+    envVars:
+      - key: JAVA_VERSION
+        value: 17
