@@ -56,13 +56,13 @@
 		            <span th:text="' · ' + ${nextAppointment.providerName}"></span>
 		            <span th:text="' · ' + ${nextAppointment.serviceName}"></span>
 		        </p>
-		        <a class="button" href="/appointments" role="button">View / Manage</a>
+		        <a class="btn btn-secondary" href="/appointments" role="button">View / Manage</a>
 		    </div>
 		
 		    <!-- No appointment -->
 		    <div th:if="${nextAppointment == null}">
 		        <p class="subtext">No appointments currently booked</p>
-		        <a class="btn btn-secondary" href="/appointments/schedule" role="button">Schedule Now</a>
+		        <a class="btn btn-secondary" href="/schedule" role="button">Schedule Now</a>
 		    </div>
 		</section>
 
