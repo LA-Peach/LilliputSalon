@@ -57,7 +57,8 @@ public class ScheduleAppointmentController {
 
     @GetMapping("/schedule")
     public String showSchedulePage(
-            @AuthenticationPrincipal CustomUserDetails user,
+            @AuthenticationPrincipal CustomUserDetails user, 
+            @RequestParam(required = false) Long serviceId,
             Model model
     ) {
         Profile customerProfile = profileRepo
@@ -76,6 +77,8 @@ public class ScheduleAppointmentController {
         model.addAttribute("categories",
                 SCrepo.findAllWithAvailableServices());
         model.addAttribute("availableStylists", availableStylists);
+        
+        model.addAttribute("preselectedServiceId", serviceId);
 
         return "scheduleAppointment";
     }

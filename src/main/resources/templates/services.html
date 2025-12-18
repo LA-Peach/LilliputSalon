@@ -44,7 +44,7 @@
 
                 <!-- CUSTOMER BUTTON -->
                 <td sec:authorize="hasRole('CUSTOMER')" style="text-align:right; width:90px;">
-                    <a th:href="@{/customer/schedule(serviceId=${service.id})}"
+                    <a th:href="@{/schedule(serviceId=${service.id})}"
                        class="btn btn-primary">
                         Schedule
                     </a>
