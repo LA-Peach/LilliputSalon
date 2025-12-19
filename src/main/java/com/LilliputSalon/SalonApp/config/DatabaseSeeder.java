@@ -399,22 +399,17 @@ public class DatabaseSeeder {
     @Transactional
     public void seedBreakTime(Availability availability) {
 
-        // Safety check: no break if already exists
-        if (breakTimeRepository.existsByAvailability(availability)) {
-            return;
-        }
-
         BreakTime breakTime = new BreakTime();
         breakTime.setAvailability(availability);
         breakTime.setBreakType("Break");
 
-        // Mid-shift break (4 hours after start)
         LocalTime start = availability.getDayStartTime().plusHours(4);
         breakTime.setBreakStartTime(start);
         breakTime.setBreakEndTime(start.plusMinutes(30));
 
         breakTimeRepository.save(breakTime);
     }
+
 
     
     
