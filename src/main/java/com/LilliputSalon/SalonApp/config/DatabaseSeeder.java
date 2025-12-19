@@ -80,7 +80,7 @@ public class DatabaseSeeder {
             userTypeRepository.saveAll(List.of(owner, stylist, customer));
         }
     }
-    
+
     @Transactional
     public void seedOwnerWithProfile() {
         if (userRepository.findByEmail("owner@lilliputsalon.com").isPresent()) {
@@ -108,7 +108,7 @@ public class DatabaseSeeder {
         profileRepository.save(profile);
     }
 
-    
+
     @Transactional
     public void seedServiceCategories() {
         if (serviceCategoryRepository.count() > 0) {
@@ -125,8 +125,8 @@ public class DatabaseSeeder {
             createCategory("Add-Ons", "Add-on services")
         ));
     }
-    
-    
+
+
 
     private ServiceCategory createCategory(
             String name,
@@ -137,7 +137,7 @@ public class DatabaseSeeder {
         category.setDescription(description);
         return category;
     }
-    
+
     @Transactional
     public void seedServices() {
         if (servicesRepository.count() > 0) {
@@ -182,7 +182,7 @@ public class DatabaseSeeder {
             service(addons, "Clarifying Treatment", "Clarifying detox treatment", 20, 20)
         ));
     }
-    
+
     private Services service(
             ServiceCategory category,
             String name,
@@ -199,7 +199,7 @@ public class DatabaseSeeder {
         s.setIsAvailable(true);
         return s;
     }
-    
+
     @Transactional
     public void seedBusinessHours() {
         if (businessHoursRepository.count() > 0) {
@@ -216,7 +216,7 @@ public class DatabaseSeeder {
             createOpenDay(6, LocalTime.of(9, 0), LocalTime.of(17, 0))  // Saturday
         ));
     }
-    
+
     private BusinessHours createOpenDay(int dayOfWeek, LocalTime open, LocalTime close) {
         BusinessHours bh = new BusinessHours();
         bh.setDayOfWeek(dayOfWeek);
@@ -234,7 +234,7 @@ public class DatabaseSeeder {
         bh.setCloseTime(null);
         return bh;
     }
-    
+
     @Transactional
     public void seedStylists() {
 
@@ -297,7 +297,7 @@ public class DatabaseSeeder {
                 stylistType
         );
     }
-    
+
     private void seedStylist(
             String email,
             String firstName,
@@ -332,12 +332,12 @@ public class DatabaseSeeder {
 
         profileRepository.save(profile);
     }
-    
+
     @Transactional
     public void seedAvailability() {
 
         // Get all stylist users
-        List<User> stylists = userRepository.findAllStylists(); 
+        List<User> stylists = userRepository.findAllStylists();
         // You likely already have this — if not, I’ll show you
 
         for (User stylist : stylists) {
@@ -367,12 +367,12 @@ public class DatabaseSeeder {
                 applyStylistHours(stylist, availability);
 
                 availabilityRepository.save(availability);
-                
+
                 seedBreakTime(availability);
             }
         }
     }
-    
+
     private void applyStylistHours(User stylist, Availability availability) {
 
         String email = stylist.getEmail();
@@ -395,7 +395,7 @@ public class DatabaseSeeder {
             availability.setDayEndTime(LocalTime.of(17, 0));
         }
     }
-    
+
     @Transactional
     public void seedBreakTime(Availability availability) {
 
@@ -411,12 +411,14 @@ public class DatabaseSeeder {
     }
 
 
-    
-    
-    
+
+
+
     @Transactional
     public void seedDemoCustomer() {
-        if (userRepository.findByEmail("demo@customer.com").isPresent()) return;
+        if (userRepository.findByEmail("demo@customer.com").isPresent()) {
+			return;
+		}
 
         User customer = new User();
         customer.setEmail("demo@customer.com");
@@ -425,10 +427,12 @@ public class DatabaseSeeder {
 
         userRepository.save(customer);
     }
-    
+
     @Transactional
     public void seedDemoAppointment() {
-        if (appointmentRepository.count() > 0) return;
+        if (appointmentRepository.count() > 0) {
+			return;
+		}
 
         User customer = userRepository.findByEmail("demo@customer.com").orElseThrow();
         User stylist = userRepository.findByEmail("sam.rivera@lilliputsalon.com").orElseThrow();
@@ -459,7 +463,7 @@ public class DatabaseSeeder {
 
 
 
-    
-    
+
+
 
 }

@@ -4,8 +4,8 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.LilliputSalon.SalonApp.domain.Services;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
+import com.LilliputSalon.SalonApp.domain.Services;
 
 public interface ServiceRepository extends JpaRepository<Services, Long> {
 
@@ -19,6 +19,6 @@ public interface ServiceRepository extends JpaRepository<Services, Long> {
     List<Services> findByCategoryId(Long categoryId);
 
     boolean existsByNameIgnoreCase(String name);
-    
+
     boolean existsByName(String name);
 }

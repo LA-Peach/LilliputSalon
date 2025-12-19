@@ -3,7 +3,6 @@ package com.LilliputSalon.SalonApp.web;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,7 +16,6 @@ import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.NextAppointmentDTO;
-import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
 import com.LilliputSalon.SalonApp.repository.ProfileRepository;
 import com.LilliputSalon.SalonApp.security.CustomUserDetails;
@@ -51,12 +49,12 @@ public class HomeController {
                 .orElseThrow(() -> new RuntimeException("Profile not found"));
 
         model.addAttribute("firstName", profile.getFirstName());
-        
+
         model.addAttribute(
                 "walkInWait",
                 appointmentService.calculateWalkInWaitTime()
             );
-        
+
         boolean isCustomer = hasRole(userDetails, "ROLE_CUSTOMER");
         boolean isStylist = hasRole(userDetails, "ROLE_STYLIST");
         boolean isOwner = hasRole(userDetails, "ROLE_OWNER");
@@ -68,7 +66,7 @@ public class HomeController {
         if (isStylist) {
             loadStylistDashboard(profile, model);
         }
-        
+
         if (isOwner) {
         	loadOwnerDashboard(profile,model);
         }
@@ -129,14 +127,14 @@ public class HomeController {
         Availability today = appointmentService.getAvailabilityForUserOnDate(userId, LocalDate.now());
 
         model.addAttribute("stylistAvailability", formatAvailability(today));
-        
+
         long completedCount =
                 appointmentService.getCompletedAppointmentCountForStylist(
                         stylistProfile.getProfileId()
                 );
 
         model.addAttribute("completedServicesCount", completedCount);
-        
+
         model.addAttribute(
                 "topServiceTypes",
                 appointmentService.getTopServicesForStylist(
@@ -168,7 +166,7 @@ public class HomeController {
                 serviceName
         );
     }
-    
+
     /* =========================================================
     	OWNER DASHBOARD
     ========================================================= */
@@ -189,9 +187,9 @@ public class HomeController {
     	        "topBusinessServices",
     	        apptServiceRepo.findTopBusinessServices()
     	    );
-    
+
     }
-    
+
 
     /* =========================================================
        SHARED HELPERS
@@ -224,7 +222,9 @@ public class HomeController {
     }
 
     private String buildDisplayName(Profile p, String fallback) {
-        if (p == null) return fallback;
+        if (p == null) {
+			return fallback;
+		}
 
         String first = p.getFirstName();
         String last = p.getLastName();
@@ -240,9 +240,11 @@ public class HomeController {
 
         return fallback;
     }
-    
+
     private String formatAvailability(Availability a) {
-        if (a == null || !Boolean.TRUE.equals(a.getIsAvailable())) return null;
+        if (a == null || !Boolean.TRUE.equals(a.getIsAvailable())) {
+			return null;
+		}
 
         DateTimeFormatter tf = DateTimeFormatter.ofPattern("h:mm a");
 
@@ -266,8 +268,8 @@ public class HomeController {
 
         return base + " (" + breaks + ")";
     }
-    
-    
-    
-    
+
+
+
+
 }

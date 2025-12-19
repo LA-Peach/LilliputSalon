@@ -20,7 +20,6 @@ import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
 import com.LilliputSalon.SalonApp.domain.User;
-
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.dto.WalkInStatus;
@@ -263,7 +262,7 @@ public class AppointmentManagerService {
 
         Instant instant = Instant.parse(dto.getStart());
         LocalDateTime start =
-            LocalDateTime.ofInstant(instant, ZoneId.systemDefault());   
+            LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 
         List<com.LilliputSalon.SalonApp.domain.Services> services =
             serviceRepo.findAllById(dto.getServiceIds());
@@ -621,7 +620,7 @@ public class AppointmentManagerService {
 
 	    return slots.stream().distinct().sorted().toList();
 	}
-	
+
 	public Long findAvailableStylistForSlot(
 	        LocalDate date,
 	        LocalTime startTime,
@@ -632,7 +631,9 @@ public class AppointmentManagerService {
 	            .mapToInt(s -> s.getTypicalDurationMinutes())
 	            .sum();
 
-	    if (totalMinutes <= 0) return null;
+	    if (totalMinutes <= 0) {
+			return null;
+		}
 
 	    LocalDateTime start = date.atTime(startTime);
 	    LocalDateTime end   = start.plusMinutes(totalMinutes);
@@ -653,7 +654,9 @@ public class AppointmentManagerService {
 	                startTime.isBefore(b.getBreakEndTime()) &&
 	                startTime.plusMinutes(totalMinutes).isAfter(b.getBreakStartTime())
 	        );
-	        if (breakOverlap) continue;
+	        if (breakOverlap) {
+				continue;
+			}
 
 	        // not overlapping appointments
 	        boolean overlaps =
@@ -671,7 +674,7 @@ public class AppointmentManagerService {
 
 	    return null; // none available
 	}
-	
+
 	public WaitTimeDTO calculateWalkInWaitTime() {
 
 	    LocalDate today = LocalDate.now();
@@ -703,13 +706,17 @@ public class AppointmentManagerService {
 	    for (Availability a : availabilities) {
 
 	        if (nowTime.isBefore(a.getDayStartTime()) ||
-	            nowTime.isAfter(a.getDayEndTime())) continue;
+	            nowTime.isAfter(a.getDayEndTime())) {
+				continue;
+			}
 
 	        boolean onBreak = a.getBreakTimes().stream().anyMatch(b ->
 	            nowTime.isAfter(b.getBreakStartTime()) &&
 	            nowTime.isBefore(b.getBreakEndTime())
 	        );
-	        if (onBreak) continue;
+	        if (onBreak) {
+				continue;
+			}
 
 	        boolean busyNow =
 	            repo.countOverlappingAppointments(
@@ -766,7 +773,7 @@ public class AppointmentManagerService {
 	    return new WaitTimeDTO(WalkInStatus.FULL_TODAY, 0, null, null, List.of());
 	}
 
-	
+
 	private int toDbDayOfWeek(LocalDate date) {
 	    int javaValue = date.getDayOfWeek().getValue(); // 1–7
 	    return javaValue % 7; // Sunday(7) → 0

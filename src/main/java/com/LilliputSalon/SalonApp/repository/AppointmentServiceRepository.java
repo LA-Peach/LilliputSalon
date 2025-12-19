@@ -28,15 +28,15 @@ public interface AppointmentServiceRepository extends JpaRepository<AppointmentS
 	@Modifying(clearAutomatically = true)
 	@Query("DELETE FROM AppointmentService aps WHERE aps.appointment.appointmentId = :id")
 	void deleteByAppointmentId(@Param("id") Long id);
-	
+
 	public interface TopServiceCount {
 
 	    String getName();   // service name
 	    Long getCount();    // number completed
 	}
-	
+
 	@Query("""
-		    SELECT 
+		    SELECT
 		        s.name AS name,
 		        COUNT(asv.id) AS count
 		    FROM AppointmentService asv

@@ -5,7 +5,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -221,7 +220,9 @@ public class MyDayController {
     }
 
     private String buildDisplayName(Profile p, String fallback) {
-        if (p == null) return fallback;
+        if (p == null) {
+			return fallback;
+		}
 
         String first = p.getFirstName();
         String last = p.getLastName();

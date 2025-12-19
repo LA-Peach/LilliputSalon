@@ -46,8 +46,8 @@ public class CalendarController {
 	private final UserTypeRepository userTypeRepo;
 	private final ServiceRepository serviceRepo;
 	private final AppointmentRepository appointmentRepo;
-	
-	
+
+
 
 
 	public CalendarController(AppointmentManagerService appointmentService,

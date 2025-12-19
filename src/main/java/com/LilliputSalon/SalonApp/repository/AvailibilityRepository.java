@@ -26,9 +26,9 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Long
     	    left join fetch a.breakTimes
     	""")
     	List<Availability> findAllWithBreaks();
-    
+
     List<Availability> findByWorkDateAndIsAvailableTrue(LocalDate workDate);
-    
+
     @Query("""
     	    select a
     	    from Availability a
@@ -36,7 +36,7 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Long
     	      and a.isAvailable = true
     	""")
     	List<Availability> findWorkingStylistsToday(LocalDate date);
-    
+
     @Query("""
     	    select min(a.workDate)
     	    from Availability a
@@ -44,9 +44,9 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Long
     	      and a.isAvailable = true
     	""")
     	Optional<LocalDate> findFirstFutureWorkDate(LocalDate today);
-    
+
     boolean existsByUser(User user);
-    
+
     boolean existsByUserAndWorkDate(User user, LocalDate workDate);
 
 }

@@ -7,12 +7,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
-import com.LilliputSalon.SalonApp.domain.User;
 
 public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, Long> {
 
     boolean existsByCategoryNameIgnoreCase(String categoryName);
-    
+
     @Query("""
     	    SELECT DISTINCT c
     	    FROM ServiceCategory c
@@ -20,7 +19,7 @@ public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory
     	    WHERE s.isAvailable = true
     	""")
     	List<ServiceCategory> findAllWithAvailableServices();
-    
+
     boolean existsByCategoryName(String categoryName);
 
     Optional<ServiceCategory> findByCategoryName(String categoryName);

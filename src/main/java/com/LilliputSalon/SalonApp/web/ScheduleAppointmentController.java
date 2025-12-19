@@ -57,7 +57,7 @@ public class ScheduleAppointmentController {
 
     @GetMapping("/schedule")
     public String showSchedulePage(
-            @AuthenticationPrincipal CustomUserDetails user, 
+            @AuthenticationPrincipal CustomUserDetails user,
             @RequestParam(required = false) Long serviceId,
             Model model
     ) {
@@ -77,12 +77,12 @@ public class ScheduleAppointmentController {
         model.addAttribute("categories",
                 SCrepo.findAllWithAvailableServices());
         model.addAttribute("availableStylists", availableStylists);
-        
+
         model.addAttribute("preselectedServiceId", serviceId);
 
         return "scheduleAppointment";
     }
-    
+
     @PostMapping("/schedule/create")
     @PreAuthorize("hasRole('CUSTOMER')")
     public String createAppointment(
@@ -98,7 +98,7 @@ public class ScheduleAppointmentController {
         LocalDate selectedDate = LocalDate.parse(date);
         LocalTime selectedTime = LocalTime.parse(time);
         LocalDateTime startDateTime = LocalDateTime.of(selectedDate, selectedTime);
-        
+
      // If customer didn't choose a stylist, auto-assign one that can take this slot
         if (stylistId == null) {
             Long assigned = appointmentService.findAvailableStylistForSlot(
@@ -156,7 +156,7 @@ public class ScheduleAppointmentController {
     }
 
 
-    
+
     private void validateCustomerStartTime(LocalDateTime startDateTime) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -172,7 +172,7 @@ public class ScheduleAppointmentController {
             );
         }
     }
-    
+
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleValidationError(
             IllegalArgumentException ex,
@@ -189,7 +189,7 @@ public class ScheduleAppointmentController {
 
         return "scheduleAppointment";
     }
-    
+
     private String reloadWithError(
             Model model,
             CustomUserDetails user,

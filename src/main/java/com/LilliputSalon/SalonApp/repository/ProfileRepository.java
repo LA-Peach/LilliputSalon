@@ -30,7 +30,7 @@ public interface ProfileRepository extends JpaRepository<Profile, Long> {
     	    where p.user.id in :userIds
     	""")
     	List<Profile> findByUserIds(@Param("userIds") Set<Long> userIds);
-    
+
     @Query("""
     	    SELECT p
     	    FROM Profile p

@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.LilliputSalon.SalonApp.domain.Services;
 import com.LilliputSalon.SalonApp.domain.ServiceCategory;
+import com.LilliputSalon.SalonApp.domain.Services;
 import com.LilliputSalon.SalonApp.service.ServiceManagerService;
 
 @Controller
