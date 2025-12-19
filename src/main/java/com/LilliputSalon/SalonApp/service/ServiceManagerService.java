@@ -30,8 +30,8 @@ public class ServiceManagerService {
         return serviceRepo.findById(id);
     }
 
-    public List<ServiceCategory> getAllCategoriesOrdered() {
-        return categoryRepo.findAllByOrderByDisplayOrderAsc();
+    public List<ServiceCategory> getAllCategories() {
+        return categoryRepo.findAll();
     }
 
     public Optional<ServiceCategory> getCategoryById(Long id) {

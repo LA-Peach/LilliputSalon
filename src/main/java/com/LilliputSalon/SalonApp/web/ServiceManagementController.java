@@ -29,7 +29,7 @@ public class ServiceManagementController {
 
     @GetMapping("/serviceManagement")
     public String manageServices(Model model) {
-        model.addAttribute("categories", serviceService.getAllCategoriesOrdered());
+        model.addAttribute("categories", serviceService.getAllCategories());
         return "serviceManagement";
     }
 

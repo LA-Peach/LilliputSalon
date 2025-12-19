@@ -11,8 +11,6 @@ import com.LilliputSalon.SalonApp.domain.User;
 
 public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory, Long> {
 
-    List<ServiceCategory> findAllByOrderByDisplayOrderAsc();
-
     boolean existsByCategoryNameIgnoreCase(String categoryName);
     
     @Query("""

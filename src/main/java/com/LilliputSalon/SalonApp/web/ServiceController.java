@@ -27,7 +27,7 @@ public class ServiceController {
     // =============================
     @GetMapping
     public String listServices(Model model) {
-        List<ServiceCategory> categories = serviceService.getAllCategoriesOrdered();
+        List<ServiceCategory> categories = serviceService.getAllCategories();
         model.addAttribute("categories", categories);
         return "services";
     }
@@ -35,7 +35,7 @@ public class ServiceController {
     @GetMapping("/api")
     @ResponseBody
     public List<Map<String, Object>> getServicesForCalendar() {
-        return serviceService.getAllCategoriesOrdered().stream()
+        return serviceService.getAllCategories().stream()
             .map(cat -> {
                 Map<String, Object> catMap = new java.util.LinkedHashMap<>();
                 catMap.put("categoryId", cat.getId());
