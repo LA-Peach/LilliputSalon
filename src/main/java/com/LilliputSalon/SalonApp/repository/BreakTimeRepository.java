@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 
 @Repository
@@ -14,5 +15,7 @@ public interface BreakTimeRepository extends JpaRepository<BreakTime, Long> {
     List<BreakTime> findByAvailability_AvailabilityId(Long availabilityId);
 
     List<BreakTime> findByAvailability_User_Id(Long userId);
+
+	boolean existsByAvailability(Availability availability);
 
 }

@@ -10,12 +10,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "service_category")
 @Getter
 @Setter
+@NoArgsConstructor
 public class ServiceCategory {
 
     @Id
@@ -28,9 +30,6 @@ public class ServiceCategory {
 
     @Column(name = "description")
     private String description;
-
-    @Column(name = "display_order")
-    private Integer displayOrder;
 
     @OneToMany(mappedBy = "category")
     private List<Services> services;

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import com.LilliputSalon.SalonApp.domain.Availability;
+import com.LilliputSalon.SalonApp.domain.User;
 
 public interface AvailibilityRepository extends JpaRepository<Availability, Long> {
 
@@ -43,5 +44,9 @@ public interface AvailibilityRepository extends JpaRepository<Availability, Long
     	      and a.isAvailable = true
     	""")
     	Optional<LocalDate> findFirstFutureWorkDate(LocalDate today);
+    
+    boolean existsByUser(User user);
+    
+    boolean existsByUserAndWorkDate(User user, LocalDate workDate);
 
 }

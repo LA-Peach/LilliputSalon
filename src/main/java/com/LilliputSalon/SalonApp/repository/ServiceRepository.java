@@ -19,4 +19,6 @@ public interface ServiceRepository extends JpaRepository<Services, Long> {
     List<Services> findByCategoryId(Long categoryId);
 
     boolean existsByNameIgnoreCase(String name);
+    
+    boolean existsByName(String name);
 }
