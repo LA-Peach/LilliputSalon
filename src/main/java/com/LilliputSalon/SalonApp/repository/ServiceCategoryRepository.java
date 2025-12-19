@@ -18,7 +18,6 @@ public interface ServiceCategoryRepository extends JpaRepository<ServiceCategory
     	    FROM ServiceCategory c
     	    LEFT JOIN FETCH c.services s
     	    WHERE s.isAvailable = true
-    	    ORDER BY c.displayOrder
     	""")
     	List<ServiceCategory> findAllWithAvailableServices();
     
