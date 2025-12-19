@@ -19,7 +19,8 @@ import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.Users;
+import com.LilliputSalon.SalonApp.domain.User;
+
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.dto.WalkInStatus;
@@ -156,7 +157,7 @@ public class AppointmentManagerService {
     	    appt.setStatus("Completed");
     	    appt.setIsCompleted(true);
 
-    	    Users user = userRepo.findById(appt.getCustomerId())
+    	    User user = userRepo.findById(appt.getCustomerId())
     	        .orElse(null);
 
     	    repo.save(appt);

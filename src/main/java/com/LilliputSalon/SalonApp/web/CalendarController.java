@@ -23,7 +23,7 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BusinessHours;
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.Users;
+import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.CalendarEventDTO;
 import com.LilliputSalon.SalonApp.dto.CreateAppointmentDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentRepository;
@@ -271,7 +271,7 @@ public class CalendarController {
 		}
 
 		// create walk-in guest
-		Users guestUser = new Users();
+		User guestUser = new User();
 		guestUser.setEmail(email.trim());
 		guestUser.setIsActive(false);
 		guestUser.setPasswordHash("TEMP_GUEST");

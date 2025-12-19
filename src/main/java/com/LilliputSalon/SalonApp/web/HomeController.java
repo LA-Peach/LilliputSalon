@@ -15,7 +15,7 @@ import com.LilliputSalon.SalonApp.domain.Appointment;
 import com.LilliputSalon.SalonApp.domain.Availability;
 import com.LilliputSalon.SalonApp.domain.BreakTime;
 import com.LilliputSalon.SalonApp.domain.Profile;
-import com.LilliputSalon.SalonApp.domain.Users;
+import com.LilliputSalon.SalonApp.domain.User;
 import com.LilliputSalon.SalonApp.dto.NextAppointmentDTO;
 import com.LilliputSalon.SalonApp.dto.WaitTimeDTO;
 import com.LilliputSalon.SalonApp.repository.AppointmentServiceRepository;
@@ -44,7 +44,7 @@ public class HomeController {
     public String home(Model model) {
 
         CustomUserDetails userDetails = getCurrentUser();
-        Users user = userDetails.getUser();
+        User user = userDetails.getUser();
         Long userId = user.getId();
 
         Profile profile = profileRepo.findByUser_Id(userId)
